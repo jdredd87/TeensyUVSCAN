@@ -3,11 +3,12 @@
 #include "webserver.h"
 #include "comm.h"
 #include "menus.h"
-
+ 
 void setup() {
-  delay(5000);
   Serial.begin(115200); // monitor output
+  beepLong();
   lcdSetup(); // stage up LCD screen
+  initFlashMem(true);
   SDinit(true); // SD card for storage
   loadConfiguration(); // load JSON settings
   serversetup(); // start up HTTP Server
