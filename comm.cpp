@@ -51,7 +51,6 @@ String send2(String cmd, bool ignore) {
 String send(String cmd, int D) // send a command to elm327
 {
   String inData = "";
-  int counter = 0;
   serial_flush();
   inData = "";
   Serial.print("SEND>> ");
@@ -100,8 +99,8 @@ bool initSTN() {
   Serial1.begin(9600);
   Serial1.flush();
   serial_flush();
-  printStage("SET_ALL_TO_DEFAULTS"); send(SET_ALL_TO_DEFAULTS, 1000);
-  printStage("RESET_ALL"); send(RESET_ALL, 1000);
+  printStage("SET_ALL_TO_DEFAULTS"); send(SET_ALL_TO_DEFAULTS, 2000);
+  printStage("RESET_ALL"); send(RESET_ALL, 3000);
   printStage("LINEFEEDS_ON"); send(LINEFEEDS_ON, 1000);
   printStage("ECHO_OFF"); send(ECHO_OFF, 1000);
   printStage("PRINTING_SPACES_OFF"); send(PRINTING_SPACES_OFF, 1000);
@@ -128,6 +127,7 @@ bool initSTNScanner() {
   printStage("HEADERS_OFF"); send(HEADERS_OFF, 1000);
   printStage("ADAPTIVE_TIMING_OFF"); send(ADAPTIVE_TIMING_OFF, 1000); // very important, with out this incoming data won't flow
   printStage("REQUEST_HEADER"); send(REQUEST_HEADER, 1000);
+  return true;
 }
 
 
@@ -156,8 +156,10 @@ bool isSTOPPED(String value) { // is string STOPPED
 
 bool isGOOD(String value, String checkstr, int len) { // we can check the start of a string to make sure it matches
   value.trim();
-  if (len > -1) {
-    if (checkstr.length() > len) {
+  if (len != -1) {
+     int clen;
+     clen = checkstr.length();   
+    if (clen > len) {
       Serial.println("length error");
       return false;
     }

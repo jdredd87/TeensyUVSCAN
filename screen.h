@@ -26,12 +26,15 @@ void showVIN();
 void showOSID();
 void showVolts();
 void showAbout();
-void showDeviceInfo();
 void showVehicleInfo();
 void showNetworkStatus();
 void getSDCARDINFO();
 void updateIP(String IP);
 void printStage(String msg);
+void getFLASHMEMINFO();
+void showSerialInfo();
+void showControllerInfo();
+
 String setIP(String IP);
 
 #endif

@@ -15,6 +15,7 @@
 #include "webserver.h"
 #include "io.h"
 #include "scanner.h"
+#include "ramtest.h"
 
 extern const int hexUP;
 extern const int hexDOWN;

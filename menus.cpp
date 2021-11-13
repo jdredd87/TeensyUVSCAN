@@ -6,7 +6,7 @@
 
 #include "menus.h"
 
-const int IRPin = 3; 
+const int IRPin = 3;
 const int hexUP = 0xFF629D;
 const int hexDOWN = 0xFFA857;
 const int hexLEFT = 0xFF22DD;
@@ -27,13 +27,12 @@ const int hexPOUND = 0xFF52AD;
 
 // Menus pushed to extended RAM
 
-struct MenuCommandRec MAINMENU[7] = {
+struct MenuCommandRec MAINMENU[6] = {
   { .text = "Settings", .op = "GT" },
   { .text = "Select PIDS", .op = "GT" },
   { .text = "Start Scan", .op = "SS" },
   { .text = "Get Vehicle Info", .op = "GV" },
-  { .text = "Get Device Info", .op = "GD" },
-  { .text = "SD Card Info", .op = "GT" },
+  { .text = "Device Diag",  .op = "GT" },
   { .text = "About", .op = "AB" }
 };
 
@@ -47,9 +46,14 @@ struct MenuCommandRec  SETTINGSMENU[6] =
   { .text = "Network Status", .op = "NS"}
 };
 
-struct MenuCommandRec  SDCARDINFOMENU[2] =
-{ { .text = "Back to Main Menu", .op = "GT" },
+struct MenuCommandRec  DIAGMENU[6] =
+{
+  { .text = "Back to Main Menu", .op = "GT" },
+  { .text = "RAM Test", .op = "RT" },
   { .text = "Get SD Card Info", .op = "SD" },
+  { .text = "Get Flash Info", .op = "FM" },
+  { .text = "Get Serial Info", .op = "SI" },
+  { .text = "Get Device Info", .op = "DI" }
 };
 
 struct MenuCommandRec PIDMENU[NUM_PIDS + 3]; // we add 2 menu options before hand
@@ -72,11 +76,12 @@ size_t PIDMENUSIZE(T (&) [PIDMenuNumberOfSize]) {
 }
 int PIDMENUCOUNT = PIDMENUSIZE(PIDMENU) - 1;
 
-template< typename T, size_t SDCARDINFOMenuNumberOfSize >
-size_t SDCARDINFOMENUSIZE(T (&) [SDCARDINFOMenuNumberOfSize]) {
-  return SDCARDINFOMenuNumberOfSize;
+template< typename T, size_t DIAGMenuNumberOfSize >
+size_t DIAGMENUSIZE(T (&) [DIAGMenuNumberOfSize]) {
+  return DIAGMenuNumberOfSize;
 }
-int SDINFOMENUCOUNT = SDCARDINFOMENUSIZE(SDCARDINFOMENU) - 1;
+int DIAGMENUCOUNT = DIAGMENUSIZE(DIAGMENU) - 1;
+
 
 int currentItem = 0;
 int maxItems = 0;
@@ -151,17 +156,23 @@ void ProcessMenuCommand(int idx) {
     {
       lastMenu = NULL;
     }
+    Serial.println("processExitMenu");
     processExitMenu();
+    Serial.println("Set currentMenu");
     currentMenu = &currentMenu[idx].gotoMenu[0];
     idx = 0;
+    Serial.println("updateMaxItems");
     updateMaxItems();
+    Serial.println("GT Done");
     serverCountDown = 0; // we moved menus, so lets webserver work again some
   } else if (currentMenu[idx].op == "EB") {
     toggleBeep();
   } else if (currentMenu[idx].op == "GV") {
     showVehicleInfo();
-  } else if (currentMenu[idx].op == "GD") {
-    showDeviceInfo();
+  } else if (currentMenu[idx].op == "SI") {
+    showSerialInfo();
+  } else if (currentMenu[idx].op == "DI") {
+    showControllerInfo();
   } else if (currentMenu[idx].op == "AB") {
     showAbout();
   } else if (currentMenu[idx].op == "ST") {
@@ -170,21 +181,41 @@ void ProcessMenuCommand(int idx) {
     savePIDSfile();
   } else if (currentMenu[idx].op == "SD") {
     getSDCARDINFO();
-  } else if (currentMenu[idx].op == "SU") {
+  } else  if (currentMenu[idx].op == "FM") {
+    getFLASHMEMINFO();
+  } else  if (currentMenu[idx].op == "SU") {
     uncheckALLPIDS();
     setupPIDS();// rebuild table because we unchecked everything!
   } else if (currentMenu[idx].op == "EN") {
+
+    bool ODHCP;
+    ODHCP = cfg.useDHCP;   
     toggleDHCP();
+
+    if (ODHCP != cfg.useDHCP) { 
     saveConfiguration();
     reboot(String("DHCP Change"));
+    } else
+    {
+     Serial.println("No change to DHCP Mode"); 
+    }
+
   } else if (currentMenu[idx].op == "NI") {
+    String OIP = cfg.IPAddress;
     cfg.IPAddress = setIP(cfg.IPAddress);
-    saveConfiguration();
-    reboot(String("IP Change"));
+    if (OIP != cfg.IPAddress) {
+      saveConfiguration();
+      reboot(String("IP Change"));
+    } else
+    {
+     Serial.println("No change to IP Address");
+    } 
   } else if (currentMenu[idx].op == "NS") {
     showNetworkStatus();
   } else if (currentMenu[idx].op == "SS") {
     startScanner();
+  } else if (currentMenu[idx].op == "RT") {
+    doRamtest();
   }
 }
 
@@ -192,16 +223,23 @@ void updateMaxItems() {
   if (currentMenu == MAINMENU)
   {
     maxItems = MAINMENUCOUNT;
-  } else if (currentMenu == SETTINGSMENU)
-  {
-    maxItems = SETTINGSMENUCOUNT;
-  } else if (currentMenu == PIDMENU)
-  {
-    maxItems = PIDMENUCOUNT;
-  } else if (currentMenu == SDCARDINFOMENU)
-  {
-    maxItems = SDINFOMENUCOUNT;
-  }
+  } else
+
+    if (currentMenu == SETTINGSMENU)
+    {
+      maxItems = SETTINGSMENUCOUNT;
+    } else
+
+      if (currentMenu == PIDMENU)
+      {
+        maxItems = PIDMENUCOUNT;
+      } else
+
+        if (currentMenu == DIAGMENU)
+        {
+          maxItems = DIAGMENUCOUNT;
+        }
+
   currentItem = 0;
 }
 
@@ -383,10 +421,10 @@ void setupMenus() {
 
   MAINMENU[0].gotoMenu = &SETTINGSMENU[0];
   MAINMENU[1].gotoMenu = &PIDMENU[0];
-  MAINMENU[5].gotoMenu = &SDCARDINFOMENU[0];
+  MAINMENU[4].gotoMenu = &DIAGMENU[0];
 
   SETTINGSMENU[0].gotoMenu = &MAINMENU[0];
-  SDCARDINFOMENU[0].gotoMenu = &MAINMENU[0];
+  DIAGMENU[0].gotoMenu = &MAINMENU[0];
 
   currentMenu = &MAINMENU[0];
   updateMaxItems();

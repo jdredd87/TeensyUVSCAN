@@ -3,15 +3,25 @@
 #include "webserver.h"
 #include "comm.h"
 #include "menus.h"
- 
+#include <TeensyThreads.h>
+
+
+void thread_server() {
+  serversetup(); // start up HTTP Server
+}
+
 void setup() {
-  Serial.begin(115200); // monitor output
+  Serial.begin(9600); // monitor output
   beepLong();
   lcdSetup(); // stage up LCD screen
-  initFlashMem(true);
   SDinit(true); // SD card for storage
+  initFlashMem(true);
   loadConfiguration(); // load JSON settings
+
+  //Serial.println("Starting Network/WebServer Thread");
+  //threads.addThread(thread_server);
   serversetup(); // start up HTTP Server
+
   initSTN(); // Setup STN1110 for GM vehicles OBD2
   loadPIDSfile(); // load PID data
   setupMenus(); // Stage up and start menu system
@@ -24,12 +34,12 @@ void loop() {
     beepOnce();
     processKey(irV);
     irV = 0; // reset it
-    serverCountDown = 1024 * 1;  // 8 secondsish 
+    serverCountDown = 1024 * 1;  // 8 secondsish
   } else
   {
     // key was pressed, so give http a break
     delay(1);
-    serverCountDown--; 
+    serverCountDown--;
     if (serverCountDown < 0) {
       serverCountDown = 0;  // ok we hit our limit, stop
     }

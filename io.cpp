@@ -125,7 +125,8 @@ void reboot(String msg) {
 }
 
 void printFile(String fn) {
-  FsFile file1 = sd.open(fn);
+  /*
+  File file1 = SD.open(fn);
   if (!file1) {
     Serial.print(F("Failed to read file"));
     Serial.print(" == ");
@@ -137,4 +138,5 @@ void printFile(String fn) {
   }
   Serial.println();
   file1.close();
+  */
 }

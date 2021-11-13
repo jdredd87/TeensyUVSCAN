@@ -143,7 +143,7 @@ void startScanner() {
     if (ir.available()) {
       irV = ir.readPacket();
 
-      if (irV = hexSTAR) {
+      if (irV == hexSTAR) {
         break;
       }
 

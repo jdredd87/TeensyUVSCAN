@@ -8,6 +8,7 @@
 
 #include "Arduino.h"
 #include <ArduinoJson.h>
+#include <SD.h>
 #include "screen.h"
 #include "settings.h"
 #include "screen.h"

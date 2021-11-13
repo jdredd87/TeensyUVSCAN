@@ -121,9 +121,7 @@ void showAbout() {
   delay(5000);
 }
 
-void showDeviceInfo() { // Show details about the ELM/STN1110 chip
-  int coreTemp;
-
+void showSerialInfo() { // Show details about the ELM/STN1110 chip
   lcd.clear();
   lcd.setCursor(0, 0);
   struct Tdeviceinfo device = getDeviceInfo();
@@ -138,7 +136,6 @@ void showDeviceInfo() { // Show details about the ELM/STN1110 chip
   lcd.setCursor(0, 0); lcd.print("STIX");
   lcd.setCursor(0, 1); lcd.print(device.STIX.substring(0, 20));
   lcd.setCursor(0, 2); lcd.print(device.STIX.substring(20));
-
   delay(5000);
   lcd.clear();
   lcd.setCursor(0, 0); lcd.print("STMFR");
@@ -150,22 +147,15 @@ void showDeviceInfo() { // Show details about the ELM/STN1110 chip
   lcd.setCursor(0, 2); lcd.print("STPRS");
   lcd.setCursor(0, 3); lcd.print(device.STPRS);
   delay(5000);
+}
 
+void showControllerInfo(){
+  int coreTemp;
   lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Core Temp : ");
-  coreTemp = round ( (tempmonGetTemp() * 1.8) + 32 );
-  lcd.print(coreTemp);
-  lcd.print("*F");
-
-  lcd.setCursor(0, 1);
-  lcd.print("USB# : ");
-  lcd.print(teensyUsbSN());
-  lcd.setCursor(0, 2);
-  lcd.print("MAC Address");
-  lcd.setCursor(0, 3);
-  lcd.print(teensyMAC());
-
+  lcd.setCursor(0, 0);  lcd.print("Core Temp : ");  coreTemp = round ( (tempmonGetTemp() * 1.8) + 32 );  lcd.print(coreTemp);  lcd.print("*F");
+  lcd.setCursor(0, 1);  lcd.print("USB# : ");  lcd.print(teensyUsbSN());
+  lcd.setCursor(0, 2);  lcd.print("MAC Address");
+  lcd.setCursor(0, 3);  lcd.print(teensyMAC());
   delay(5000);
 }
 
@@ -193,6 +183,7 @@ void showNetworkStatus() {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("IP: ");
+  Serial.println(cfg.IPAddress);
   lcd.print(cfg.IPAddress);
   lcd.setCursor(0, 1);
   lcd.print(getMACAddress());
@@ -247,57 +238,32 @@ void getSDCARDINFO()  {
   SDinit(false); // re-init incase of card swapped and get updated info
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("MFG ID: ");
-  lcd.print(m_cid.mid, HEX);
+  lcd.printf("SD Card");
   lcd.setCursor(0, 1);
-  lcd.print("OEM ID: ");
-  lcd.print(m_cid.oid[0]);
-  lcd.print(m_cid.oid[1]);
+  lcd.printf("Size : %d", SD.totalSize());
   lcd.setCursor(0, 2);
-  lcd.print("Product: ");
-  for (uint8_t i = 0; i < 5; i++) {
-    lcd.print(m_cid.pnm[i]);
-  }
-  lcd.setCursor(0, 3);
-  lcd.print("Version: ");
-  lcd.print(m_cid.prv_n);
-  lcd.print(".");
-  lcd.print(m_cid.prv_m);
+  lcd.printf("Used : %d", SD.usedSize());
   delay(5000);
+}
+
+void getFLASHMEMINFO()
+{
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Serial: ");
-  lcd.print(m_cid.psn);
-  lcd.setCursor(0, 1);
-  lcd.print("MFG Date: ");
-  lcd.print(m_cid.mdt_month);
-  lcd.print("/");
-  lcd.print( (2000 + m_cid.mdt_year_low + 10 * m_cid.mdt_year_high) );
-  lcd.setCursor(0, 2);
-  lcd.print("Size: ");
-  lcd.print( ( 0.000512 * sdCardCapacity(&m_csd)));
-  lcd.print("mb");
-  lcd.setCursor(0, 3);
-  lcd.print("Card type: ");
-  switch (sd.card()->type()) {
-    case SD_CARD_TYPE_SD1:
-      lcd.print("SD1");
-      break;
-    case SD_CARD_TYPE_SD2:
-      lcd.print("SD2");
-      break;
-    case SD_CARD_TYPE_SDHC:
-      if (sdCardCapacity(&m_csd) < 70000000) {
-        lcd.print("SDHC");
-      } else {
-        lcd.print("SDXC");
-      }
-      break;
-    default:
-      lcd.print("Unknown");
+  lcd.printf("Flash MEM ");
+  if (flasheMEMEnabled == true) {
+    lcd.print("Enabled");
+    lcd.setCursor(0, 1);
+    lcd.printf("Size : %d", flashStorage.totalSize());
+    lcd.setCursor(0, 2);
+    lcd.printf("Used : %d", flashStorage.usedSize());   
+  } else
+  {
+    lcd.print("Disabled");
   }
   delay(5000);
 }
+
 
 void updateIP(String IP) {
   IP.trim();
@@ -310,6 +276,8 @@ void updateIP(String IP) {
 String setIP(String IP) {
   int irV = 0;
   int len = 0;
+  String OIP;
+  OIP = IP;
   IP.trim();
   lcd.setCursor(0, 1);
   lcd.print("IP Address");
@@ -361,6 +329,13 @@ String setIP(String IP) {
       {
         IP.concat(".");
       }
+      if (irV == hexPOUND)
+      {
+       Serial.println("Aborting IP Setting");
+       irV = 0;
+       IP = OIP;
+       break; 
+      }
       if (irV == hexOK)
       {
         char IPC[16];
@@ -395,5 +370,5 @@ void printStage(String msg) {
   {
     lcd.print(msg);
   }
- delay(50);  
+  delay(50);
 }

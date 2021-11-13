@@ -36,7 +36,12 @@ bool serversetup() {
   teensyMAC(mac);
   String IP;
   IP = cfg.IPAddress; // will use this to split up IP Address later on
-  cfg.useDHCP = false;
+
+  if (IP=="")  {
+   Serial.println("Static IP is BLANK. Switching to DHCP instead.");    
+   cfg.useDHCP = true; 
+  }
+
   if (cfg.useDHCP) {
     cfg.IPAddress = "1.1.1.1"; // default cause we are DHCP mode
     printStage("DHCP Startup");
@@ -56,10 +61,15 @@ bool serversetup() {
   } else
   {
     printStage("Static IP Startup");
+    Serial.print("Static IP ");
+    Serial.println(IP);
+  
+    
     ip1 = getValue(IP, '.', 0).toInt();
     ip2 = getValue(IP, '.', 1).toInt();
     ip3 = getValue(IP, '.', 2).toInt();
     ip4 = getValue(IP, '.', 3).toInt();
+    
     IPAddress ip(ip1, ip2, ip3, ip4);
     Ethernet.begin(mac, ip);
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
@@ -69,6 +79,11 @@ bool serversetup() {
     }
   }
 
+  for (int ex=0; ex<100; ex++){
+   delay(100);
+   if (Ethernet.linkStatus() == LinkON) break; 
+  }
+  
   if (Ethernet.linkStatus() == LinkOFF) {
     Serial.println("Ethernet cable is not connected.");
     printStage("Cable not connected");
@@ -83,12 +98,20 @@ bool serversetup() {
                    Ethernet.localIP()[2] + "." +
                    Ethernet.localIP()[3];
 
-
+  
+  
   saveConfiguration();
   printStage("HTTP Server Startup");
   server.begin();
+  Serial.println("");
+  Serial.println("HTTP Server Startup");
+  Serial.println("");
+  Serial.print("IP Address ");
   Serial.println(Ethernet.localIP());
+  Serial.print("MAC Address ");
   Serial.println(getMACAddress());
+  Serial.println("");
+  
   printStage("");
   return true;
 }
