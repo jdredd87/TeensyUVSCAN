@@ -26,7 +26,9 @@ void setupTest()
   lcd.print("CCM_CBCMR ");
 
   char CCMBuffer[16];
-  sprintf(CCMBuffer,"%08X",CCM_CBCMR);
+  int myCCM;
+  myCCM = CCM_CBCMR; // get rid of a warning message
+  sprintf(CCMBuffer,"%08X",myCCM);
   lcd.print(CCMBuffer);
   
   lcd.setCursor(0, 3);
@@ -202,6 +204,7 @@ bool check_lfsr_pattern(uint32_t seed)
 
 void doRamtest()
 {
+  stopserver = true; // stop web server from accepting 
   setupTest();
   //memory_ok;
 }

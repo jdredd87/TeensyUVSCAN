@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "screen.h"
 #include "io.h"
+#include "webserver.h"
 
 void doRamtest();
 

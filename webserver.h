@@ -19,5 +19,6 @@ bool serversetup();
 String getMACAddress();
 extern int serverCountDown;
 extern EthernetServer server;
+extern bool stopserver;
 
 #endif

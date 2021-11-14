@@ -5,6 +5,8 @@
 
 #include "webserver.h"
 
+bool stopserver = false; // hack to just trick the loop during RAM test. Seems to be no STOP to server once started?
+
 int serverCountDown = 0;
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 
@@ -15,7 +17,7 @@ int ip2 = 168;
 int ip3 = 50;
 int ip4 = 10;
 
-EthernetServer server(80);
+EXTMEM EthernetServer server(80);
 
 String getMACAddress()
 {
@@ -37,9 +39,9 @@ bool serversetup() {
   String IP;
   IP = cfg.IPAddress; // will use this to split up IP Address later on
 
-  if (IP=="")  {
-   Serial.println("Static IP is BLANK. Switching to DHCP instead.");    
-   cfg.useDHCP = true; 
+  if (IP == "")  {
+    Serial.println("Static IP is BLANK. Switching to DHCP instead.");
+    cfg.useDHCP = true;
   }
 
   if (cfg.useDHCP) {
@@ -63,13 +65,13 @@ bool serversetup() {
     printStage("Static IP Startup");
     Serial.print("Static IP ");
     Serial.println(IP);
-  
-    
+
+
     ip1 = getValue(IP, '.', 0).toInt();
     ip2 = getValue(IP, '.', 1).toInt();
     ip3 = getValue(IP, '.', 2).toInt();
     ip4 = getValue(IP, '.', 3).toInt();
-    
+
     IPAddress ip(ip1, ip2, ip3, ip4);
     Ethernet.begin(mac, ip);
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
@@ -79,11 +81,11 @@ bool serversetup() {
     }
   }
 
-  for (int ex=0; ex<100; ex++){
-   delay(100);
-   if (Ethernet.linkStatus() == LinkON) break; 
+  for (int ex = 0; ex < 100; ex++) {
+    delay(100);
+    if (Ethernet.linkStatus() == LinkON) break;
   }
-  
+
   if (Ethernet.linkStatus() == LinkOFF) {
     Serial.println("Ethernet cable is not connected.");
     printStage("Cable not connected");
@@ -98,8 +100,8 @@ bool serversetup() {
                    Ethernet.localIP()[2] + "." +
                    Ethernet.localIP()[3];
 
-  
-  
+
+
   saveConfiguration();
   printStage("HTTP Server Startup");
   server.begin();
@@ -111,7 +113,7 @@ bool serversetup() {
   Serial.print("MAC Address ");
   Serial.println(getMACAddress());
   Serial.println("");
-  
+
   printStage("");
   return true;
 }
@@ -120,6 +122,12 @@ int serverloopidx = 0;
 int serverloopstep = 0;
 
 void serverloop() {
+
+  if (stopserver == true)
+  {
+    return; // stop accepting any client work
+  }
+
   delay(1);
   serverloopidx++;
 
