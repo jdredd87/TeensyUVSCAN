@@ -3,7 +3,6 @@
 #include "webserver.h"
 #include "comm.h"
 #include "menus.h"
-#include <TeensyThreads.h>
 
 
 void thread_server() {
@@ -11,7 +10,7 @@ void thread_server() {
 }
 
 void setup() {
-  Serial.begin(9600); // monitor output
+  Serial.begin(115200); // monitor output
   beepLong();
   lcdSetup(); // stage up LCD screen
   SDinit(true); // SD card for storage

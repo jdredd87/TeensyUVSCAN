@@ -29,23 +29,23 @@ bool flasheMEMEnabled = false;
 
 const int pidfilesize = 65536; // allocate 64k of ram for PID file, should be plenty!
 
-void SDinit(bool showStartup){
-Serial.println("SD Card Init");
-if (showStartup) {
-  printStage("SD Card Startup");
-}
-if (!SD.begin(BUILTIN_SDCARD)) {
-  Serial.println("SD Card unable to start");
-} else
-{
-  Serial.println("SD Card Initialized");
-  Serial.printf("SD Size : %d bytes \n", SD.totalSize());
-  Serial.printf("SD Used : %d bytes \n", SD.usedSize());
-}
-if (showStartup) {
-  printStage("");
-}
-Serial.println("");
+void SDinit(bool showStartup) {
+  Serial.println("SD Card Init");
+  if (showStartup) {
+    printStage("SD Card Startup");
+  }
+  if (!SD.begin(BUILTIN_SDCARD)) {
+    Serial.println("SD Card unable to start");
+  } else
+  {
+    Serial.println("SD Card Initialized");
+    Serial.printf("SD Size : %d bytes \n", SD.totalSize());
+    Serial.printf("SD Used : %d bytes \n", SD.usedSize());
+  }
+  if (showStartup) {
+    printStage("");
+  }
+  Serial.println("");
 }
 
 
@@ -162,8 +162,9 @@ void saveConfiguration() {
 const char *pidsfilename = "pids.txt";
 
 void loadPIDSfile() {
+  ClearBlocks();
   Serial.println("");
-  pidCounter = 0;
+
 
 #if !defined(USE_SDCARD)
   File file1 = flashStorage.open(pidsfilename);
@@ -189,15 +190,29 @@ void loadPIDSfile() {
   for (JsonObject pids_item : doc["pids"].as<JsonArray>()) {
     const char* pids_item_guid = pids_item["guid"]; // "12e56326-f969-4661-ae59-258cb349ae48", ...
     bool pids_item_selected = pids_item["selected"]; // true, true, false, true
+    bool pids_item_fake = pids_item["fake"];
+    bool pids_item_duplicate = pids_item["duplicate"];
+    int pids_item_dupeIndex = pids_item["dupeIndex"];
     for (int idx = 0; idx < NUM_PIDS; idx++) {
+      //  Serial.println(PIDS[idx]._guid);
       if (PIDS[idx]._guid == pids_item_guid) {
         PIDS[idx]._selected = pids_item_selected;
         if (pids_item_selected == true) {
-          pidCounter = pidCounter + PIDS[idx]._len;
+          sPIDS.push_back(PIDS[idx]);
+          sPIDS.back()._fake = pids_item_fake;
+          sPIDS.back()._duplicate = pids_item_duplicate;
+          sPIDS.back()._dupeIndex = pids_item_dupeIndex;
+          BuildPIDS();
+          continue;
         }
       }
     }
   }
+
+  printPIDS();
+  BuildPIDS();
+  PopulateGrid();
+
 
   // repair PIDS
   for (int idx = 0; idx < NUM_PIDS; idx++) {
@@ -226,6 +241,7 @@ void loadPIDSfile() {
       default: break;
     }
   }
+  // serializeJsonPretty(doc, Serial);
   file1.close();
 }
 
@@ -253,14 +269,22 @@ void savePIDSfile() {
   }
 
   StaticJsonDocument<pidfilesize> doc; // 32k memory alloc for PID storage
+
   JsonArray pids = doc.createNestedArray("pids");
-  for (int idx = 0; idx < NUM_PIDS; idx++) {
+
+  for (int idx = 0; idx < sPIDS.size(); idx++) {
     JsonObject piddata = pids.createNestedObject();
-    if (PIDS[idx]._guid != "") {
-      piddata["guid"] = PIDS[idx]._guid;
-      piddata["selected"] = PIDS[idx]._selected;
+    if (sPIDS.at(idx)._guid != "") {
+      piddata["guid"] = sPIDS.at(idx)._guid;
+      piddata["selected"] = sPIDS.at(idx)._selected;
+      piddata["fake"] = sPIDS.at(idx)._fake;
+      piddata["duplicate"] = sPIDS.at(idx)._duplicate;
+      piddata["dupeIndex"] = sPIDS.at(idx)._dupeIndex;
     }
   }
+
+  // serializeJsonPretty(doc, Serial);
+
   if (serializeJsonPretty(doc, file1) == 0) {
     Serial.println("");
     Serial.print(F("Failed to write file "));

@@ -157,8 +157,8 @@ bool isSTOPPED(String value) { // is string STOPPED
 bool isGOOD(String value, String checkstr, int len) { // we can check the start of a string to make sure it matches
   value.trim();
   if (len != -1) {
-     int clen;
-     clen = checkstr.length();   
+    int clen;
+    clen = checkstr.length();
     if (clen > len) {
       Serial.println("length error");
       return false;
@@ -181,10 +181,20 @@ struct Tdeviceinfo getDeviceInfo() // return info about the STN chipset
   return device;
 }
 
-String getVOLTS()
-{
+String getVOLTS() {
   String v1 = send("STVR", 1000);
   return v1;
+}
+
+String getPCMHW() {
+  String v1 = send("3C04", 1000);
+  long id = 0;
+  Serial.println(v1);
+  v1.remove(0, 4); // 008EC880
+  Serial.println(v1);
+  id = StrToInt(v1);
+  Serial.println(id,DEC);
+  return id;
 }
 
 String getVIN() // Request PCM stored VIN

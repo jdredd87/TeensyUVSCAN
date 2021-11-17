@@ -111,6 +111,7 @@ bool initSTN();
 String getVIN();
 String getOSID();
 String getVOLTS();
+String getPCMHW();
 struct Tdeviceinfo getDeviceInfo();
 String send2(String cmd, bool ignore);
 

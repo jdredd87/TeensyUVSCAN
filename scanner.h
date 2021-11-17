@@ -3,6 +3,7 @@
 
 #include "Arduino.h"
 #include "menus.h"
+#include "expression_parser.h"
 
 void togglestartupScan();
 void startScanner();

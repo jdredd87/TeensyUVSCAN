@@ -4,6 +4,13 @@
    to handle the different menus that are avaialble to the end user
 */
 
+/* TO DO LIST
+ *  
+ *  Convert MENU System to use QLIST
+ *  So don't have to hard code so many menu details
+ *  
+ */
+
 #include "menus.h"
 
 const int IRPin = 3;
@@ -27,9 +34,10 @@ const int hexPOUND = 0xFF52AD;
 
 // Menus pushed to extended RAM
 
-struct MenuCommandRec MAINMENU[6] = {
+struct MenuCommandRec MAINMENU[7] = {
   { .text = "Settings", .op = "GT" },
   { .text = "Select PIDS", .op = "GT" },
+  { .text = "Stage View", .op = "SV" },
   { .text = "Start Scan", .op = "SS" },
   { .text = "Get Vehicle Info", .op = "GV" },
   { .text = "Device Diag",  .op = "GT" },
@@ -89,7 +97,6 @@ int maxItems = 0;
 struct MenuCommandRec *currentMenu;
 struct MenuCommandRec *lastMenu; // user hits * can go back to prev menu
 
-int pidCounter = 0; // each pid is 1,2,4 bytes big, 40 max.
 
 NecDecoder ir;  // IR sensor
 
@@ -100,11 +107,12 @@ void irIsr() {
 void ProcessMenuCommand(int idx); // forward declare
 
 void uncheckALLPIDS() {
+  ClearBlocks();
+  sPIDS.clear();
   for (int idx = 0; idx < NUM_PIDS; idx++) {
     PIDS[idx]._selected = false;
   }
   beepLong();
-  pidCounter = 0;
 }
 
 void processExitMenu() {
@@ -128,26 +136,107 @@ void ProcessMenuCommand(int idx) {
     idx = currentItem;
   }
   if (currentMenu[idx].op == "P!") { // !! = PID toggle true/false option
+
     currentMenu[idx].selected = !currentMenu[idx].selected;
-    if (currentMenu[idx].selected) {
-      // lets check. if we are to many
-      if ( (pidCounter + PIDS[currentMenu[idx].idx]._len) > 40) {
-        beepLong();
-        lcd.setCursor(0, 3);
-        lcd.print("Max PIDS Selected!");
-        delay(2500);
-        lcd.setCursor(0, 3);
-        lcd.print("                  ");
-        currentMenu[idx].selected = false;
-      } else
-      {
-        pidCounter = pidCounter + PIDS[currentMenu[idx].idx]._len;
+
+    if (!currentMenu[idx].selected) {
+
+      int dIDX; // delete index
+      String dGUID; // delete index guid
+
+      int rGUID = -1; // remove index
+
+      dIDX = currentMenu[idx].idx; // index of the item in PIDS
+      dGUID = PIDS[dIDX]._guid; // GUID for PIDS dIDX
+      Serial.print("dGUID = ");
+      Serial.println(dGUID);
+
+      // find it in sPIDS if there, should be if unselecting it!
+
+      for (int sx = 0; sx < sPIDS.size(); sx++) {
+        if (sPIDS[sx]._guid == dGUID)
+        {
+          rGUID = sx; // we found it.
+          Serial.print("rGUID = ");
+          Serial.println(sPIDS[sx]._guid == dGUID);
+          break;
+        }
       }
-    } else
-    {
-      pidCounter = pidCounter - PIDS[currentMenu[idx].idx]._len;
+
+      if (rGUID > -1) { // ok so as long as not -1 then remove it from the sPDIS list
+        Serial.println("");
+        Serial.print("Remove already selected PID ");
+        Serial.print(idx);
+        Serial.print(" - ");
+        Serial.print(sPIDS[rGUID]._name);
+        Serial.println("");
+        Serial.print("Size Before ");
+        Serial.println(sPIDS.size());
+        sPIDS.clear(rGUID);
+        Serial.print("Size After " );
+        Serial.println(sPIDS.size());
+        Serial.println("");
+      }
+
+      return;
     }
-    PIDS[currentMenu[idx].idx]._selected = currentMenu[idx].selected;
+    else
+    {
+      bool found = false;
+      int foundidx = 0;
+      float rnd = 0;
+      bool isFake;
+      int x;
+
+      x = currentMenu[idx].idx;
+
+      for (int y = 0; y < sPIDS.size(); y++) {
+        found = false;
+        if (sPIDS.at(y)._PID == PIDS[x]._PID) {
+          Serial.print("Duplicate of ");  Serial.print(sPIDS.at(y)._PID); Serial.print(" at "); Serial.println(y);
+          found = true;
+          foundidx = y;
+          isFake = false;
+          break;
+        }
+      }
+
+      // If Duplicate found then mark it as a duplicate then go to next item
+      if (found) {
+        sPIDS.push_back(PIDS[x]);
+        sPIDS.at(sPIDS.size() - 1)._duplicate = true;
+        sPIDS.at(sPIDS.size() - 1)._dupeIndex = foundidx;
+        sPIDS.at(sPIDS.size() - 1)._selected = true;
+        return;
+        // we found a duplicate. so add it to the list of scanable pids, but don't add it to the PCM pid table.
+      }
+
+      isFake = PIDS[x]._fake; // check for FAKE pids
+
+      // if FAKE then mark it and add it and goto next item
+      if (isFake == true) {
+        sPIDS.push_back(PIDS[x]);
+        sPIDS.at(sPIDS.size() - 1)._selected = true;
+        // we found a duplicate. so add it to the list of scanable pids, but don't add it to the PCM pid table.
+        return;
+      }
+
+      sPIDS.push_back(PIDS[x]);
+      sPIDS.at(sPIDS.size() - 1)._selected = true;
+      Serial.print(sPIDS.size());
+      Serial.print(" - Added PID = ");
+      Serial.print(sPIDS.at(sPIDS.size() - 1)._PID);
+      Serial.print("    ---   ");
+      Serial.println(sPIDS.at(sPIDS.size() - 1)._name);
+      bool added = BuildPIDS();
+      if (added == false)
+      {
+        Serial.println("---------------------------------------");
+        Serial.println("Deleted last item");
+        sPIDS.pop_back(); // remove last item
+        return;
+      }
+    }
   } else if (currentMenu[idx].op == "GT") { // GOTO MENU
 
     if (lastMenu == NULL) {
@@ -189,15 +278,15 @@ void ProcessMenuCommand(int idx) {
   } else if (currentMenu[idx].op == "EN") {
 
     bool ODHCP;
-    ODHCP = cfg.useDHCP;   
+    ODHCP = cfg.useDHCP;
     toggleDHCP();
 
-    if (ODHCP != cfg.useDHCP) { 
-    saveConfiguration();
-    reboot(String("DHCP Change"));
+    if (ODHCP != cfg.useDHCP) {
+      saveConfiguration();
+      reboot(String("DHCP Change"));
     } else
     {
-     Serial.println("No change to DHCP Mode"); 
+      Serial.println("No change to DHCP Mode");
     }
 
   } else if (currentMenu[idx].op == "NI") {
@@ -208,14 +297,16 @@ void ProcessMenuCommand(int idx) {
       reboot(String("IP Change"));
     } else
     {
-     Serial.println("No change to IP Address");
-    } 
+      Serial.println("No change to IP Address");
+    }
   } else if (currentMenu[idx].op == "NS") {
     showNetworkStatus();
   } else if (currentMenu[idx].op == "SS") {
     startScanner();
   } else if (currentMenu[idx].op == "RT") {
     doRamtest();
+  } else if (currentMenu[idx].op == "SV") {
+    showStageViewer();
   }
 }
 
@@ -288,7 +379,7 @@ void printMenu() {
   }
   if (showpidcount) {
     lcd.setCursor(0, 3);
-    lcd.print(pidCounter);
+    lcd.print(sPIDS.size());
   }
 }
 
@@ -317,9 +408,11 @@ void processKey(int key) {
   {
     ++currentItem;
     if (currentItem > maxItems)
+    
     {
-      currentItem = maxItems;
+      currentItem = 0; // go back to top?
     }
+    
     if (currentMenu[currentItem].text == "") {
       processKey(key); // recursive
       return;
@@ -399,14 +492,20 @@ void setupPIDS() {
   PIDMENU[1].op = "SU"; // Save Pids
   PIDMENU[1].onExitMenu = true;
 
-
   PIDMENU[2].text = "";
   PIDMENU[2].op = "SP"; // Save Pids
   PIDMENU[2].onExitMenu = true;
 
   for (int idx = 0; idx < NUM_PIDS; idx++)
   {
-    PIDMENU[idx + 3].text = PIDS[idx]._name;
+
+    if (PIDS[idx]._shortname == "") {
+      PIDMENU[idx + 3].text = PIDS[idx]._name;
+    }
+    else {
+      PIDMENU[idx + 3].text = PIDS[idx]._shortname;
+    }
+
     PIDMENU[idx + 3].op = "P!"; // select mode operation
     PIDMENU[idx + 3].idx = idx;
     PIDMENU[idx + 3].selected = PIDS[idx]._selected;
@@ -421,7 +520,7 @@ void setupMenus() {
 
   MAINMENU[0].gotoMenu = &SETTINGSMENU[0];
   MAINMENU[1].gotoMenu = &PIDMENU[0];
-  MAINMENU[4].gotoMenu = &DIAGMENU[0];
+  MAINMENU[5].gotoMenu = &DIAGMENU[0];
 
   SETTINGSMENU[0].gotoMenu = &MAINMENU[0];
   DIAGMENU[0].gotoMenu = &MAINMENU[0];

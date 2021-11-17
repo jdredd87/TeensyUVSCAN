@@ -16,6 +16,7 @@
 #include "io.h"
 #include "scanner.h"
 #include "ramtest.h"
+#include "stageViewer.h"
 
 extern const int hexUP;
 extern const int hexDOWN;
@@ -35,7 +36,7 @@ extern const int hex0;
 extern const int hexSTAR;
 extern const int hexPOUND;
 extern NecDecoder ir;
-extern int pidCounter;
+
 extern void setupPIDS();
 
 struct MenuCommandRec {

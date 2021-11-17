@@ -160,11 +160,13 @@ void showControllerInfo(){
 }
 
 void showVehicleInfo() { // Show VIN/OSID/Voltage/things like that
+  initSTN(); // reset pcm and controller
   lcd.clear();
   lcd.setCursor(0, 0);
   String VIN = getVIN(); showStep();
   String OSID = getOSID(); showStep();
   String volts = getVOLTS(); showStep();
+  String PCMHW = getPCMHW(); showStep();
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("VIN");
@@ -174,9 +176,12 @@ void showVehicleInfo() { // Show VIN/OSID/Voltage/things like that
   lcd.print("OSID: ");
   lcd.print(OSID);
   lcd.setCursor(0, 3);
-  lcd.print("Volts: ");
+  lcd.print("HWID: ");
+  lcd.print(PCMHW);
+  lcd.setCursor(14,0); 
   lcd.print(volts);
-  delay(5000);
+  lcd.print("v");
+  delay(10000);
 }
 
 void showNetworkStatus() {
