@@ -9,9 +9,6 @@
 #include "QList.h"
 #include "io.h"
 
-
-#define NUM_PIDS 77
-
 struct TPID {
  String _name; // Long name
  String _shortname; // Short name
@@ -31,19 +28,23 @@ struct TPID {
 
  byte _blockID; // which block ID.. $fe, $fd, ect
  byte _blockPOS; // 0,1,2,3,4,5
+
+ bool _view; // show in viewer
  
 };
 
-extern TPID PIDS[NUM_PIDS];
+extern QList<struct TPID> fPIDS;
 extern QList<struct TPID> sPIDS;
+
 extern byte currentBlock;
 
-void printPIDS();
-bool BuildPIDS();
 String addpid(String PID, byte len, byte PID_Position);
 int findspot(byte len, String PID);
+int getVIEWcount();
 void PopulateGrid();
 void ClearBlocks();
-
+void InstallPIDS();
+void printPIDS();
+bool BuildPIDS();
 
 #endif

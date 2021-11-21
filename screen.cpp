@@ -6,7 +6,7 @@
 
 #include "screen.h"
 
-LiquidCrystal_I2C_Hangul lcd(0x3F, 20, 4);  // LCD 20x4
+LiquidCrystal_I2C_Hangul lcd(0x3F, 20, 4); // LCD 20x4
 
 // arrow up
 byte newChar1[8] = {
@@ -100,7 +100,6 @@ void showOSID() { // show OSID on LCD
   delay(5000);
 }
 
-
 void showVolts() { // show OSID on LCD
   String V = send("ATRV", 1000);
   lcd.clear();
@@ -127,35 +126,72 @@ void showSerialInfo() { // Show details about the ELM/STN1110 chip
   struct Tdeviceinfo device = getDeviceInfo();
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.setCursor(0, 0); lcd.print("STDI: "); lcd.print(device.STDI);
-  lcd.setCursor(0, 1); lcd.print("STDICES: "); lcd.print(device.STDICES);
-  lcd.setCursor(0, 2); lcd.print("STDICPO: "); lcd.print(device.STDICPO);
-  lcd.setCursor(0, 3); lcd.print("STI: "); lcd.print(device.STI);
+  lcd.setCursor(0, 0);
+  lcd.print("STDI: ");
+  lcd.print(device.STDI);
+  lcd.setCursor(0, 1);
+  lcd.print("STDICES: ");
+  lcd.print(device.STDICES);
+  lcd.setCursor(0, 2);
+  lcd.print("STDICPO: ");
+  lcd.print(device.STDICPO);
+  lcd.setCursor(0, 3);
+  lcd.print("STI: ");
+  lcd.print(device.STI);
   delay(5000);
   lcd.clear();
-  lcd.setCursor(0, 0); lcd.print("STIX");
-  lcd.setCursor(0, 1); lcd.print(device.STIX.substring(0, 20));
-  lcd.setCursor(0, 2); lcd.print(device.STIX.substring(20));
+  lcd.setCursor(0, 0);
+  lcd.print("STIX");
+  lcd.setCursor(0, 1);
+  lcd.print(device.STIX.substring(0, 20));
+  lcd.setCursor(0, 2);
+  lcd.print(device.STIX.substring(20));
   delay(5000);
   lcd.clear();
-  lcd.setCursor(0, 0); lcd.print("STMFR");
-  lcd.setCursor(0, 1); lcd.print(device.STMFR);
+  lcd.setCursor(0, 0);
+  lcd.print("STMFR");
+  lcd.setCursor(0, 1);
+  lcd.print(device.STMFR);
   delay(5000);
   lcd.clear();
-  lcd.setCursor(0, 0); lcd.print("STSN");
-  lcd.setCursor(0, 1); lcd.print(device.STSN);
-  lcd.setCursor(0, 2); lcd.print("STPRS");
-  lcd.setCursor(0, 3); lcd.print(device.STPRS);
+  lcd.setCursor(0, 0);
+  lcd.print("STSN");
+  lcd.setCursor(0, 1);
+  lcd.print(device.STSN);
+  lcd.setCursor(0, 2);
+  lcd.print("STPRS");
+  lcd.setCursor(0, 3);
+  lcd.print(device.STPRS);
   delay(5000);
 }
 
-void showControllerInfo(){
+void showControllerInfo() {
   int coreTemp;
+  time_t t = now();
   lcd.clear();
-  lcd.setCursor(0, 0);  lcd.print("Core Temp : ");  coreTemp = round ( (tempmonGetTemp() * 1.8) + 32 );  lcd.print(coreTemp);  lcd.print("*F");
-  lcd.setCursor(0, 1);  lcd.print("USB# : ");  lcd.print(teensyUsbSN());
-  lcd.setCursor(0, 2);  lcd.print("MAC Address");
-  lcd.setCursor(0, 3);  lcd.print(teensyMAC());
+  lcd.setCursor(0, 0);
+  lcd.print("Core Temp : ");
+  coreTemp = round((tempmonGetTemp() * 1.8) + 32);
+  lcd.print(coreTemp);
+  lcd.print("*F");
+  lcd.setCursor(0, 1);
+  lcd.print("USB# : ");
+  lcd.print(teensyUsbSN());
+  lcd.setCursor(0, 2);
+  lcd.print("D/T :");
+  lcd.setCursor(0, 3);
+
+  lcd.print(month());
+  lcd.print("-");
+  lcd.print(day());
+  lcd.print("-");
+  lcd.print(year());
+  lcd.print(" ");
+  lcd.print(hour());
+  lcd.print(":");
+  lcd.print(minute());
+  lcd.print(":");
+  lcd.print(second());
   delay(5000);
 }
 
@@ -163,10 +199,14 @@ void showVehicleInfo() { // Show VIN/OSID/Voltage/things like that
   initSTN(); // reset pcm and controller
   lcd.clear();
   lcd.setCursor(0, 0);
-  String VIN = getVIN(); showStep();
-  String OSID = getOSID(); showStep();
-  String volts = getVOLTS(); showStep();
-  String PCMHW = getPCMHW(); showStep();
+  String VIN = getVIN();
+  showStep();
+  String OSID = getOSID();
+  showStep();
+  String volts = getVOLTS();
+  showStep();
+  String PCMHW = getPCMHW();
+  showStep();
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("VIN");
@@ -178,7 +218,7 @@ void showVehicleInfo() { // Show VIN/OSID/Voltage/things like that
   lcd.setCursor(0, 3);
   lcd.print("HWID: ");
   lcd.print(PCMHW);
-  lcd.setCursor(14,0); 
+  lcd.setCursor(14, 0);
   lcd.print(volts);
   lcd.print("v");
   delay(10000);
@@ -195,23 +235,22 @@ void showNetworkStatus() {
   lcd.setCursor(0, 2);
   if (cfg.useDHCP == true) {
     lcd.print("DHCP MODE");
-  } else
-  {
+  } else {
     lcd.print("STATIC IP MODE");
   }
   lcd.setCursor(0, 3);
   auto link = Ethernet.linkStatus();
   lcd.print("Link: ");
   switch (link) {
-    case Unknown:
-      lcd.print("Unknown");
-      break;
-    case LinkON:
-      lcd.print("ON");
-      break;
-    case LinkOFF:
-      lcd.print("OFF");
-      break;
+  case Unknown:
+    lcd.print("Unknown");
+    break;
+  case LinkON:
+    lcd.print("ON");
+    break;
+  case LinkOFF:
+    lcd.print("OFF");
+    break;
   }
   lcd.print(" HW: ");
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
@@ -222,8 +261,7 @@ void showNetworkStatus() {
     lcd.print("W5200");
   } else if (Ethernet.hardwareStatus() == EthernetW5500) {
     lcd.print("W5500");
-  } else
-  {
+  } else {
     lcd.print("????");
   }
   delay(5000);
@@ -239,7 +277,7 @@ void lcdSetup() {
   lcd.setCursor(0, 1);
 }
 
-void getSDCARDINFO()  {
+void getSDCARDINFO() {
   SDinit(false); // re-init incase of card swapped and get updated info
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -251,8 +289,7 @@ void getSDCARDINFO()  {
   delay(5000);
 }
 
-void getFLASHMEMINFO()
-{
+void getFLASHMEMINFO() {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.printf("Flash MEM ");
@@ -261,14 +298,12 @@ void getFLASHMEMINFO()
     lcd.setCursor(0, 1);
     lcd.printf("Size : %d", flashStorage.totalSize());
     lcd.setCursor(0, 2);
-    lcd.printf("Used : %d", flashStorage.usedSize());   
-  } else
-  {
+    lcd.printf("Used : %d", flashStorage.usedSize());
+  } else {
     lcd.print("Disabled");
   }
   delay(5000);
 }
-
 
 void updateIP(String IP) {
   IP.trim();
@@ -300,55 +335,41 @@ String setIP(String IP) {
       if (irV == hexLEFT) // delete
       {
         IP.remove(IP.length() - 1);
-      } else if (irV == hex1)
-      {
+      } else if (irV == hex1) {
         IP.concat("1");
-      } else if (irV == hex2)
-      {
+      } else if (irV == hex2) {
         IP.concat("2");
-      } else if (irV == hex3)
-      {
+      } else if (irV == hex3) {
         IP.concat("3");
-      } else  if (irV == hex4)
-      {
+      } else if (irV == hex4) {
         IP.concat("4");
-      } else  if (irV == hex5)
-      {
+      } else if (irV == hex5) {
         IP.concat("5");
-      } else  if (irV == hex6)
-      {
+      } else if (irV == hex6) {
         IP.concat("6");
-      }  else if (irV == hex7)
-      {
+      } else if (irV == hex7) {
         IP.concat("7");
-      }  else if (irV == hex8)
-      {
+      } else if (irV == hex8) {
         IP.concat("8");
-      } else  if (irV == hex9)
-      {
+      } else if (irV == hex9) {
         IP.concat("9");
-      }  else if (irV == hex0)
-      {
+      } else if (irV == hex0) {
         IP.concat("0");
-      } else if (irV == hexSTAR)
-      {
+      } else if (irV == hexSTAR) {
         IP.concat(".");
       }
-      if (irV == hexPOUND)
-      {
-       Serial.println("Aborting IP Setting");
-       irV = 0;
-       IP = OIP;
-       break; 
+      if (irV == hexPOUND) {
+        Serial.println("Aborting IP Setting");
+        irV = 0;
+        IP = OIP;
+        break;
       }
-      if (irV == hexOK)
-      {
+      if (irV == hexOK) {
         char IPC[16];
         IP.toCharArray(IPC, IP.length() + 1);
         if (validate_ip(IPC)) {
           break;
-        } else
-        {
+        } else {
           beepLong();
         }
       }
@@ -363,16 +384,14 @@ String setIP(String IP) {
 
 void printStage(String msg) {
   lcd.setCursor(0, 2);
-  for (int x = 0; x < 20; x++)
-  {
+  for (int x = 0; x < 20; x++) {
     lcd.print(" ");
   }
   lcd.setCursor(0, 2);
   if (msg.length() > 20) {
     for (int x = 0; x < 20; x++)
       lcd.print(msg[x]);
-  } else
-  {
+  } else {
     lcd.print(msg);
   }
   delay(50);

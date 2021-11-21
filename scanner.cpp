@@ -1,11 +1,25 @@
 #include "scanner.h"
-#include "settings.h"
-#include "menus.h"
-#include "comm.h"
-#include "pids.h"
 
-void activateblocks(int lastblock)
-{
+String CurrentLogFileName = "";
+
+void GenerateFileName() {
+  time_t t = now();
+  CurrentLogFileName = "/logs/";
+  CurrentLogFileName.concat(month());
+  CurrentLogFileName.concat("-");
+  CurrentLogFileName.concat(day());
+  CurrentLogFileName.concat("-");
+  CurrentLogFileName.concat(year());
+  CurrentLogFileName.concat(" ");
+  CurrentLogFileName.concat(hour());
+  CurrentLogFileName.concat("-");
+  CurrentLogFileName.concat(minute());
+  CurrentLogFileName.concat("-");
+  CurrentLogFileName.concat(second());
+  CurrentLogFileName.concat(".csv");
+}
+
+void activateblocks(int lastblock) {
   if (lastblock == 254) {
     send("2A13FE000000", 1000);
   } else if (lastblock == 253) {
@@ -39,9 +53,7 @@ void activateblocks(int lastblock)
             }
 }
 
-
-String calculate(String formula, float n1, float n2, float n3, float n4)
-{
+String calculate(String formula, float n1, float n2, float n3, float n4) {
   formula.toUpperCase();
   //Serial.print("Original Formula : ");
   //Serial.println(formula);
@@ -54,14 +66,12 @@ String calculate(String formula, float n1, float n2, float n3, float n4)
   char f[255];
   formula.toCharArray(f, 255);
   double value = parse_expression(f);
-  return  String(value, 2);
+  return String(value, 2);
 }
 
-void processData(String inData)
-{
+void processData(String inData) {
   int blockID;
   String str;
-
 
   String v1;
   String v2;
@@ -105,19 +115,28 @@ void processData(String inData)
           n4 = 0;
           int bPOS = sPIDS.at(idx)._blockPOS;
 
-          switch (bPOS)
-          {
-            case 0: bPOS = 0; break;
-            case 1: bPOS = 2; break;
-            case 2: bPOS = 4; break;
-            case 3: bPOS = 6; break;
-            case 4: bPOS = 8; break;
-            case 5: bPOS = 10; break;
+          switch (bPOS) {
+            case 0:
+              bPOS = 0;
+              break;
+            case 1:
+              bPOS = 2;
+              break;
+            case 2:
+              bPOS = 4;
+              break;
+            case 3:
+              bPOS = 6;
+              break;
+            case 4:
+              bPOS = 8;
+              break;
+            case 5:
+              bPOS = 10;
+              break;
           }
 
-
-          switch (sPIDS.at(idx)._len)
-          {
+          switch (sPIDS.at(idx)._len) {
             case 1: {
                 v1 = inData.substring(bPOS, bPOS + 2); // 00
                 n1 = StrToInt(v1);
@@ -160,6 +179,23 @@ void processData(String inData)
           // Serial.println("");
         }
       }
+    }
+  }
+}
+
+
+void showScanner() {
+  int row = 0;
+  for (int idx = 0; idx < sPIDS.size(); idx++) {
+    if (sPIDS.at(idx)._view) {
+      lcd.setCursor(0, row);
+      lcd.print("                    ");
+      lcd.setCursor(0, row);
+      lcd.print(sPIDS.at(idx)._shortname);
+      lcd.print(" > ");
+      lcd.print(sPIDS.at(idx)._value);
+      row++;
+      if (row >= 5) return; // don't need to bother
     }
   }
 }
@@ -211,8 +247,30 @@ void startScanner() {
   String inData = "";
   delay(500);
   int irV;
+
+  GenerateFileName();
+
+  char fn[64];
+
+
+  CurrentLogFileName.toCharArray(fn, CurrentLogFileName.length() + 1);
+
+  File logFile = SD.open(fn, FILE_WRITE);
+
+  if (!logFile) {
+    Serial.println("");
+    Serial.print(F("Failed to create file "));
+    Serial.println(fn);
+    return;
+  } else {
+    Serial.println("");
+    Serial.print("Created File ");
+    Serial.println(fn);
+  }
+
   while (1) {
-    delay(1);
+    serverloop();
+    
     if (ir.available()) { // check IR sensor for input
       irV = ir.readPacket();
       if (irV == hexSTAR) { // * key = abort
@@ -225,9 +283,14 @@ void startScanner() {
         inData.replace(char(13), "");
         // Serial.println(inData);
         processData(inData);
+
+        if (logFile) {
+          logFile.println(inData);
+        }
+
+        showScanner();
         inData = "";
-      } else
-      {
+      } else {
         inData.concat(c);
       }
     }
@@ -240,11 +303,12 @@ void startScanner() {
       starttime = millis(); // reset clock
     }
   }
+  // user exited so back to menu interface!
   printMenu();
-}
 
-
-void showScanner() {
+  if (logFile) {
+    logFile.close();
+  }
 }
 
 void togglestartupScan() {

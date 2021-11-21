@@ -1,15 +1,15 @@
 #include "ramtest.h"
 
-extern "C" uint8_t external_psram_size;
+extern "C"
+uint8_t external_psram_size;
 
 bool memory_ok = false;
-uint32_t *memory_begin, *memory_end;
+uint32_t * memory_begin, * memory_end;
 
 bool check_fixed_pattern(uint32_t pattern);
 bool check_lfsr_pattern(uint32_t seed);
 
-void setupTest()
-{
+void setupTest() {
   uint8_t size = external_psram_size;
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -19,7 +19,12 @@ void setupTest()
   lcd.print(" Mbyte");
   Serial.printf("EXTMEM Memory Test, %d Mbyte\n", size);
   if (size == 0) return;
-  const float clocks[4] = {396.0f, 720.0f, 664.62f, 528.0f};
+  const float clocks[4] = {
+    396.0f,
+    720.0f,
+    664.62f,
+    528.0f
+  };
   const float frequency = clocks[(CCM_CBCMR >> 8) & 3] / (float)(((CCM_CBCMR >> 29) & 7) + 1);
 
   lcd.setCursor(0, 2);
@@ -28,9 +33,9 @@ void setupTest()
   char CCMBuffer[16];
   int myCCM;
   myCCM = CCM_CBCMR; // get rid of a warning message
-  sprintf(CCMBuffer,"%08X",myCCM);
+  sprintf(CCMBuffer, "%08X", myCCM);
   lcd.print(CCMBuffer);
-  
+
   lcd.setCursor(0, 3);
   lcd.print(frequency);
   lcd.print(" ");
@@ -38,8 +43,8 @@ void setupTest()
   Serial.printf(" CCM_CBCMR=%08X (%.1f MHz)\n", CCM_CBCMR, frequency);
 
   delay(5000);
-  memory_begin = (uint32_t *)(0x70000000);
-  memory_end = (uint32_t *)(0x70000000 + size * 1048576);
+  memory_begin = (uint32_t * )(0x70000000);
+  memory_end = (uint32_t * )(0x70000000 + size * 1048576);
   elapsedMillis msec = 0;
   if (!check_fixed_pattern(0x5A698421)) return;
   delay(2500);
@@ -104,18 +109,17 @@ void setupTest()
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Elapsed Time ");
-  lcd.print((float)msec / 1000.0f);
+  lcd.print((float) msec / 1000.0f);
   lcd.setCursor(0, 1);
   lcd.print("All test passed");
-  Serial.printf(" test ran for %.2f seconds\n", (float)msec / 1000.0f);
+  Serial.printf(" test ran for %.2f seconds\n", (float) msec / 1000.0f);
   Serial.println("All memory tests passed :-)");
   delay(5000);
   reboot("RAM was blasted!");
   memory_ok = true;
 }
 
-bool fail_message(volatile uint32_t *location, uint32_t actual, uint32_t expected)
-{
+bool fail_message(volatile uint32_t * location, uint32_t actual, uint32_t expected) {
   beepLong();
   beepLong();
   beepLong();
@@ -124,7 +128,7 @@ bool fail_message(volatile uint32_t *location, uint32_t actual, uint32_t expecte
   lcd.print("Error!");
   lcd.setCursor(0, 1);
   lcd.print("at ");
-  lcd.print((uint32_t)location);
+  lcd.print((uint32_t) location);
   lcd.setCursor(0, 2);
   lcd.print("read ");
   lcd.print(actual);
@@ -133,14 +137,13 @@ bool fail_message(volatile uint32_t *location, uint32_t actual, uint32_t expecte
   lcd.print(expected);
   delay(10000);
   Serial.printf(" Error at %08X, read %08X but expected %08X\n",
-                (uint32_t)location, actual, expected);
+    (uint32_t) location, actual, expected);
   return false;
 }
 
 // fill the entire RAM with a fixed pattern, then check it
-bool check_fixed_pattern(uint32_t pattern)
-{
-  volatile uint32_t *p;
+bool check_fixed_pattern(uint32_t pattern) {
+  volatile uint32_t * p;
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Fixed Pattern");
@@ -148,32 +151,31 @@ bool check_fixed_pattern(uint32_t pattern)
   lcd.print(pattern);
   Serial.printf("testing with fixed pattern %08X\n", pattern);
   for (p = memory_begin; p < memory_end; p++) {
-    *p = pattern;
+    * p = pattern;
   }
-  arm_dcache_flush_delete((void *)memory_begin,
-                          (uint32_t)memory_end - (uint32_t)memory_begin);
+  arm_dcache_flush_delete((void * ) memory_begin,
+    (uint32_t) memory_end - (uint32_t) memory_begin);
   for (p = memory_begin; p < memory_end; p++) {
-    uint32_t actual = *p;
+    uint32_t actual = * p;
     if (actual != pattern) return fail_message(p, actual, pattern);
   }
   return true;
 }
 
 // fill the entire RAM with a pseudo-random sequence, then check it
-bool check_lfsr_pattern(uint32_t seed)
-{
-  volatile uint32_t *p;
+bool check_lfsr_pattern(uint32_t seed) {
+  volatile uint32_t * p;
   uint32_t reg;
   lcd.clear();
-  lcd.setCursor(0,0);
+  lcd.setCursor(0, 0);
   lcd.print("Pseudo-Random Seed");
-  lcd.setCursor(0,1);
+  lcd.setCursor(0, 1);
   lcd.print(seed);
- 
+
   Serial.printf("testing with pseudo-random sequence, seed=%u\n", seed);
   reg = seed;
   for (p = memory_begin; p < memory_end; p++) {
-    *p = reg;
+    * p = reg;
     for (int i = 0; i < 3; i++) {
       if (reg & 1) {
         reg >>= 1;
@@ -183,11 +185,11 @@ bool check_lfsr_pattern(uint32_t seed)
       }
     }
   }
-  arm_dcache_flush_delete((void *)memory_begin,
-                          (uint32_t)memory_end - (uint32_t)memory_begin);
+  arm_dcache_flush_delete((void * ) memory_begin,
+    (uint32_t) memory_end - (uint32_t) memory_begin);
   reg = seed;
   for (p = memory_begin; p < memory_end; p++) {
-    uint32_t actual = *p;
+    uint32_t actual = * p;
     if (actual != reg) return fail_message(p, actual, reg);
     //Serial.printf(" reg=%08X\n", reg);
     for (int i = 0; i < 3; i++) {
@@ -202,8 +204,7 @@ bool check_lfsr_pattern(uint32_t seed)
   return true;
 }
 
-void doRamtest()
-{
+void doRamtest() {
   stopserver = true; // stop web server from accepting 
   setupTest();
   //memory_ok;

@@ -1,13 +1,42 @@
 #include "stageViewer.h"
-#include "menus.h"
 
-struct MenuCommandRec PIDMENU[NUM_PIDS + 3]; // we add 2 menu options before hand
+EXTMEM QList < struct MenuCommandRec > PIDVIEWMENU;
 
-template< typename T, size_t SelectPIDMenuNumberOfSize >
-size_t SelectPIDMENUSIZE(T (&) [SelectPIDMenuNumberOfSize]) {
-  return PIDMenuNumberOfSize;
+void uncheckALLVIEWPIDS() {
+  for (int idx = 0; idx < sPIDS.size(); idx++) {
+    sPIDS.at(idx)._view = false;
+  }
+  beepLong();
 }
-int SelectPIDMENUCOUNT = SelectPIDMENUSIZE(SelectPIDMENU) - 1;
+
+void setupShowPIDS() {
+  String pidName = "";
+
+  PIDVIEWMENU.clear();
+  AddMenuItem(&PIDVIEWMENU, "Back to Main Menu", "GT", false, 0, false, & MAINMENU);
+  AddMenuItem(&PIDVIEWMENU, "Uncheck All", "VU", false, 0, false, NULL);
+  AddMenuItem(&PIDVIEWMENU, "", "SP", true, 0, false, NULL);
+
+  for (int idx = 0; idx < sPIDS.size(); idx++) {
+    if (sPIDS.at(idx)._shortname == "") {
+      pidName = sPIDS.at(idx)._name;
+    } else {
+      pidName = sPIDS.at(idx)._shortname;
+    }
+
+    Serial.print(pidName);
+    Serial.print(" ");
+    if (sPIDS.at(idx)._view) {
+      Serial.println("TRUE");
+    } else {
+      Serial.println("FALSE");
+    }
+    
+    AddMenuItem(&PIDVIEWMENU, pidName, "S!", false, idx, sPIDS.at(idx)._view, NULL);
+  }
+
+  currentItem = 0; // first item of menu!
+}
 
 void showStageViewer() {
   lcd.clear();
@@ -17,12 +46,25 @@ void showStageViewer() {
   lcd.print("to display while");
   lcd.setCursor(0, 2);
   lcd.print("scanning vehicle");
-  delay(5000);
+  delay(500); // set back to 5000
 
   lcd.clear();
-  lcd.setCursor(0,0);
+  lcd.setCursor(0, 0);
   lcd.print("Select 4. * to exit.");
-  
+  setupShowPIDS();
 
-  
+  // emulate the "GT" menu call
+
+  if (lastMenu == NULL) {
+    lastMenu = currentMenu;
+  } else {
+    lastMenu = NULL;
+  }
+
+  Serial.println("processExitMenu");
+  processExitMenu();
+  Serial.println("Set currentMenu->");
+  currentMenu = & PIDVIEWMENU;
+  Serial.println("Manual GT Done");
+  serverCountDown = 0; // we moved menus, so lets webserver work again some
 }

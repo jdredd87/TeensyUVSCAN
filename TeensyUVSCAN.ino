@@ -3,24 +3,30 @@
 #include "webserver.h"
 #include "comm.h"
 #include "menus.h"
-
+#include <TimeLib.h>
+#include "TeensyThreads.h"
 
 void thread_server() {
+  delay(1000);
   serversetup(); // start up HTTP Server
+}
+
+time_t getTeensy3Time()
+{
+  return Teensy3Clock.get();
 }
 
 void setup() {
   Serial.begin(115200); // monitor output
-  beepLong();
+  beepOnce();
+  setSyncProvider(getTeensy3Time);
   lcdSetup(); // stage up LCD screen
+  lcdSetup(); // stage up LCD screen a second time. Oddly sometimes 1st try is garbage land.
   SDinit(true); // SD card for storage
   initFlashMem(true);
+  InstallPIDS();
   loadConfiguration(); // load JSON settings
-
-  //Serial.println("Starting Network/WebServer Thread");
-  //threads.addThread(thread_server);
   serversetup(); // start up HTTP Server
-
   initSTN(); // Setup STN1110 for GM vehicles OBD2
   loadPIDSfile(); // load PID data
   setupMenus(); // Stage up and start menu system

@@ -4,6 +4,12 @@
 #include "Arduino.h"
 #include "menus.h"
 #include "expression_parser.h"
+#include "settings.h"
+#include "menus.h"
+#include "comm.h"
+#include "pids.h"
+#include "webserver.h"
+#include <TimeLib.h>
 
 void togglestartupScan();
 void startScanner();

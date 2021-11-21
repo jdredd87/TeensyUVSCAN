@@ -17,8 +17,12 @@
 void serverloop();
 bool serversetup();
 String getMACAddress();
+bool ServiceClient(EthernetClient * client);
+char GetRequestedHttpResource(char * req_line, char * file_name, char * file_type);
+
 extern int serverCountDown;
 extern EthernetServer server;
 extern bool stopserver;
+
 
 #endif

@@ -6,7 +6,10 @@
 #include "pids.h"
 #include "io.h"
 #include "screen.h"
+#include "menus.h"
 
 void showStageViewer();
-
+void uncheckALLVIEWPIDS();
+void setupShowPIDS();
+extern QList <struct MenuCommandRec> PIDVIEWMENU;
 #endif

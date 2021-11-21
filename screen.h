@@ -14,8 +14,9 @@
 #include "settings.h"
 #include "webserver.h"
 #include <TeensyID.h>
+#include <TimeLib.h>
 
-const String myVersion = "1.0.3";
+const String myVersion = "1.0.4";
 
 extern LiquidCrystal_I2C_Hangul lcd;
 
