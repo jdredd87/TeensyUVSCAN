@@ -7,8 +7,11 @@
 #include "TeensyThreads.h"
 
 void thread_server() {
-  delay(1000);
-  serversetup(); // start up HTTP Server
+  while (1) {
+    //threads.delay(1);
+    serverloop();
+    delay(100);
+  }
 }
 
 time_t getTeensy3Time()
@@ -20,6 +23,7 @@ void setup() {
   Serial.begin(115200); // monitor output
   beepOnce();
   setSyncProvider(getTeensy3Time);
+  delay(500); // charge up time
   lcdSetup(); // stage up LCD screen
   lcdSetup(); // stage up LCD screen a second time. Oddly sometimes 1st try is garbage land.
   SDinit(true); // SD card for storage
@@ -27,9 +31,11 @@ void setup() {
   InstallPIDS();
   loadConfiguration(); // load JSON settings
   serversetup(); // start up HTTP Server
-  initSTN(); // Setup STN1110 for GM vehicles OBD2
+  initSTN(true); // Setup STN1110 for GM vehicles OBD2
   loadPIDSfile(); // load PID data
   setupMenus(); // Stage up and start menu system
+  webThreadID = threads.addThread(thread_server, 0, 1024 * 16, 0);
+  threads.setTimeSlice(webThreadID,10);
 }
 
 void loop() {
@@ -38,19 +44,10 @@ void loop() {
     irV = ir.readPacket();
     beepOnce();
     processKey(irV);
-    irV = 0; // reset it
-    serverCountDown = 1024 * 1;  // 8 secondsish
+    irV = 0; // reset it  
   } else
   {
-    // key was pressed, so give http a break
-    delay(1);
-    serverCountDown--;
-    if (serverCountDown < 0) {
-      serverCountDown = 0;  // ok we hit our limit, stop
-    }
-    // if we are at 0 then let the server loop run free until next key press
-    if (serverCountDown == 0) {
-      serverloop();
-    }
-  }
+   delay(10);
+   //serverloop();
+  } 
 }

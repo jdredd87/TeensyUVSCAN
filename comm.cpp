@@ -91,58 +91,54 @@ String send(String cmd, int D) // send a command to elm327
   return inData;
 }
 
-bool initSTN() {
+bool initSTN(bool withHeader) {
   printStage("STN1110 Init");
   Serial1.begin(9600);
   Serial1.flush();
   serial_flush();
-  printStage("SET_ALL_TO_DEFAULTS");
-  send(SET_ALL_TO_DEFAULTS, 2000);
-  printStage("RESET_ALL");
-  send(RESET_ALL, 3000);
-  printStage("LINEFEEDS_ON");
-  send(LINEFEEDS_ON, 1000);
-  printStage("ECHO_OFF");
-  send(ECHO_OFF, 1000);
-  printStage("PRINTING_SPACES_OFF");
-  send(PRINTING_SPACES_OFF, 1000);
-  printStage("ALLOW_LONG_MESSAGES");
-  send(ALLOW_LONG_MESSAGES, 1000);
-  printStage("HEADERS_OFF");
-  send(HEADERS_OFF, 1000);
-  //printStage("DISP_CURRENT_PROTOCOL"); send(DISP_CURRENT_PROTOCOL, 1000);
-  printStage("REQUEST_TEST_PID");
-  send(REQUEST_TEST_PID, 1000);
-  printStage("REQUEST_HEADER");
-  send(REQUEST_HEADER, 1000);
+  printStage("SET_ALL_TO_DEFAULTS");  send(SET_ALL_TO_DEFAULTS, 2000);
+  printStage("RESET_ALL");            send(RESET_ALL, 3000);
+  printStage("LINEFEEDS_ON");         send(LINEFEEDS_ON, 1000);
+  printStage("ECHO_OFF");             send(ECHO_OFF, 1000);
+  printStage("PRINTING_SPACES_OFF");  send(PRINTING_SPACES_OFF, 1000);
+  printStage("ALLOW_LONG_MESSAGES");  send(ALLOW_LONG_MESSAGES, 1000);
+  printStage("HEADERS_OFF");          send(HEADERS_OFF, 1000);
+  printStage("REQUEST_TEST_PID");     send(REQUEST_TEST_PID, 1000);
+  if (withHeader) {
+    printStage("REQUEST_HEADER");
+    send(REQUEST_HEADER, 1000);
+  }
   printStage("");
   return true;
 }
 
-bool initSTNScanner() {
+void initSTNScanner() {
   printStage("STN1110 Init for scanning PCM");
   Serial1.flush();
   serial_flush();
-  printStage("SET_ALL_TO_DEFAULTS");
-  send(SET_ALL_TO_DEFAULTS, 1000);
-  printStage("RESET_ALL");
-  send(RESET_ALL, 1000);
-  printStage("ECHO_OFF");
-  send(ECHO_OFF, 1000); // yes ECHO ON
-  printStage("LINEFEEDS_ON");
-  send(LINEFEEDS_ON, 1000);
-  printStage("ALLOW_LONG_MESSAGES");
-  send(ALLOW_LONG_MESSAGES, 1000);
-  send("STPT 1000", 1000);
-  printStage("PRINTING_SPACES_OFF");
-  send(PRINTING_SPACES_OFF, 1000);
-  printStage("HEADERS_OFF");
-  send(HEADERS_OFF, 1000);
-  printStage("ADAPTIVE_TIMING_OFF");
-  send(ADAPTIVE_TIMING_OFF, 1000); // very important, with out this incoming data won't flow
-  printStage("REQUEST_HEADER");
-  send(REQUEST_HEADER, 1000);
-  return true;
+  printStage("RESET_ALL");            send(SET_ALL_TO_DEFAULTS, 1000);
+  printStage("ECHO_OFF");             send(ECHO_OFF, 1000);
+  printStage("LINEFEEDS_ON");         send(LINEFEEDS_ON, 1000);
+  printStage("ALLOW_LONG_MESSAGES");  send(ALLOW_LONG_MESSAGES, 1000);
+  printStage("PRINTING_SPACES_OFF");  send(PRINTING_SPACES_OFF, 1000);
+  printStage("HEADERS_OFF");          send(HEADERS_OFF, 1000);
+  printStage("ADAPTIVE_TIMING_OFF");  send(ADAPTIVE_TIMING_OFF, 1000);
+  printStage("STDI"); send("STDI", 1000);
+  printStage("STI");  send("STI", 1000);
+  printStage("ATI");  send("ATI", 1000);
+  send("010D", 1000); // reset some pcm data asking for pids?
+  send("0110", 1000); // reset some pcm data asking for pids?
+  send(REQUEST_HEADER, 1000); // Make sure header is back
+  send(GET_VIN1, 1000); // VIN 1
+  send(GET_VIN2, 1000); // VIN 2
+  send(GET_VIN3, 1000); // VIN 3
+  send(GET_OSID, 1000); // OSID
+  send(GET_HW, 1000); // PCM HW
+  send("20", 1000); // reset pcm calls maybe?
+  send("1000", 1000); // reset some pcm data asking for pids?
+  send("0100", 1000); // reset some pcm data asking for pids?
+  printStage("STPTO");  send("STPTO 1000", 1000); // TIMEOUTS
+  printStage("STPTOT"); send("STPTOT 1000", 1000);
 }
 
 //need some verify routines after grabbing data

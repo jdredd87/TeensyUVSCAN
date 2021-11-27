@@ -393,7 +393,7 @@ void InstallPIDS() {
   AddPIDItem( "LONG TERM FUEL TRIM BANK 1",  "LTFT", "(N0-128)/1.28",  "%",  1,  "0007", "%f", "%LTF%",  false,  "", false,  false,  -1, "", "8f28352c-6902-4520-a2b0-c6094977543d");
   AddPIDItem( "MAP (kPa)", "MAP(kPa)", "N0", "kPa",  1,  "000B", "", "%MAP%",  false,  "", false,  false,  -1, "", "e15cc0ae-f8e3-44b9-9546-dd93bbdb9d7e");
   AddPIDItem( "VEHICLE SPEED", "MPH",  "N0/1.609", "MPH",  1,  "000D", "%f", "%MPH%",  false,  "", false,  false,  -1, "", "2eb011bb-2e13-475c-8ba4-e1aa632cb602");
-  AddPIDItem( "SPARK ADVANCE", "Spark",  "((N0/2) - 64) *",  "Degrees",  1,  "000E", "", "%SPK%",  false,  "", false,  false,  -1, "", "c3cb7b54-b469-4a91-8108-75ea36793ca4");
+  AddPIDItem( "SPARK ADVANCE", "Spark",  "((N0/2) - 64)",  "Degrees",  1,  "000E", "", "%SPK%",  false,  "", false,  false,  -1, "", "c3cb7b54-b469-4a91-8108-75ea36793ca4");
   AddPIDItem( "INTAKE AIR TEMPERATURE",  "IAT",  "N0-40",  "ºC", 1,  "000F", "", "%IAT%",  false,  "", false,  false,  -1, "", "01fa99de-b9b9-4d3e-9917-84b33eeb9f52");
   AddPIDItem( "TP Angle %",  "TP %", "N0/2.55",  "%",  1,  "0011", "", "%TPS%",  false,  "", false,  false,  -1, "", "59d2572d-deca-4ef9-8cc5-ba4e86084eb8");
   AddPIDItem( "Ignition 1 Voltage",  "IGN V",  "N0/10",  "V",  1,  "1141", "", "%IGV%",  false,  "", false,  false,  -1, "", "c014ff51-cd13-4f8b-8649-5a3fff42967b");

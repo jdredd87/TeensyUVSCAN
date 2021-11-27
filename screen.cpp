@@ -9,7 +9,7 @@
 LiquidCrystal_I2C_Hangul lcd(0x3F, 20, 4); // LCD 20x4
 
 // arrow up
-byte newChar1[8] = {
+byte charArrowUP[8] = {
   B00100,
   B01110,
   B10101,
@@ -21,7 +21,7 @@ byte newChar1[8] = {
 };
 
 // arrow down
-byte newChar2[8] = {
+byte charArrowDOWN[8] = {
   B00100,
   B00100,
   B00100,
@@ -33,7 +33,7 @@ byte newChar2[8] = {
 };
 
 // arrow right
-byte newChar3[8] = {
+byte charArrowRIGHT[8] = {
   B00000,
   B00100,
   B00010,
@@ -45,7 +45,7 @@ byte newChar3[8] = {
 };
 
 // arrow left
-byte newChar4[8] = {
+byte charArrowLEFT[8] = {
   B00000,
   B00100,
   B01000,
@@ -57,7 +57,7 @@ byte newChar4[8] = {
 };
 
 // checkmark
-byte newChar5[8] = {
+byte charCHECK[8] = {
   B00001,
   B00001,
   B00010,
@@ -69,11 +69,11 @@ byte newChar5[8] = {
 };
 
 void setupchars() {
-  lcd.createChar(0, newChar1);
-  lcd.createChar(1, newChar2);
-  lcd.createChar(2, newChar3);
-  lcd.createChar(3, newChar4);
-  lcd.createChar(4, newChar5);
+  lcd.createChar(0, charArrowUP);
+  lcd.createChar(1, charArrowDOWN);
+  lcd.createChar(2, charArrowRIGHT);
+  lcd.createChar(3, charArrowLEFT);
+  lcd.createChar(4, charCHECK);
 }
 
 void showStep() { // show A dot on screen to represent a step/action taking place
@@ -196,7 +196,7 @@ void showControllerInfo() {
 }
 
 void showVehicleInfo() { // Show VIN/OSID/Voltage/things like that
-  initSTN(); // reset pcm and controller
+  initSTN(true); // reset pcm and controller
   lcd.clear();
   lcd.setCursor(0, 0);
   String VIN = getVIN();
@@ -242,15 +242,15 @@ void showNetworkStatus() {
   auto link = Ethernet.linkStatus();
   lcd.print("Link: ");
   switch (link) {
-  case Unknown:
-    lcd.print("Unknown");
-    break;
-  case LinkON:
-    lcd.print("ON");
-    break;
-  case LinkOFF:
-    lcd.print("OFF");
-    break;
+    case Unknown:
+      lcd.print("Unknown");
+      break;
+    case LinkON:
+      lcd.print("ON");
+      break;
+    case LinkOFF:
+      lcd.print("OFF");
+      break;
   }
   lcd.print(" HW: ");
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
@@ -269,8 +269,11 @@ void showNetworkStatus() {
 
 void lcdSetup() {
   lcd.init();
+  delay(50);
   lcd.clear();
+  delay(50);
   lcd.backlight();
+  delay(50);
   setupchars();
   lcd.setCursor(0, 0);
   lcd.print("Starting up");
@@ -327,7 +330,6 @@ String setIP(String IP) {
   lcd.cursor();
   lcd.setCursor(len, 2);
   while (1) {
-    delay(100);
     if (ir.available()) {
       irV = ir.readPacket();
       beepOnce();
@@ -376,7 +378,10 @@ String setIP(String IP) {
       len = IP.length(); // update length no matter what
       updateIP(IP);
       irV = 0; // reset it
-    }
+    } else
+     {
+      delay(10);
+     }
   }
   lcd.noCursor();
   return IP;

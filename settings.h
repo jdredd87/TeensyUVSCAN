@@ -1,4 +1,4 @@
-/*        
+/*
    Settings
    Contains SD card support
    Loading/Saving of files in JSON Format

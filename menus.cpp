@@ -20,6 +20,7 @@ const int hexSTAR = 0xFF42BD;
 const int hexPOUND = 0xFF52AD;
 
 int currentItem = 0;
+int lastItem = 0;
 
 // Variable for each MENU we want to build
 
@@ -27,6 +28,7 @@ EXTMEM QList < struct MenuCommandRec > MAINMENU;
 EXTMEM QList < struct MenuCommandRec > SETTINGSMENU;
 EXTMEM QList < struct MenuCommandRec > PIDMENU;
 EXTMEM QList < struct MenuCommandRec > DIAGMENU;
+EXTMEM QList < struct MenuCommandRec > DTCMENU;
 
 // Simple pointers to the current menu we are on ( and pointing to ) and the last menu ( where we came from... simple 2 level menu system )
 // if we want to go three levels or deeper, then have to change up how last menu works then but for now this works ok
@@ -94,6 +96,7 @@ void ProcessMenuCommand(int idx) {
     }
   } else if (currentMenu -> at(idx).op == "P!") { // P! = PID toggle true/false option
     currentMenu -> at(idx).selected = !currentMenu -> at(idx).selected;
+    uncheckALLVIEWPIDS(); // the pids we selected, clear the viewer....
     if (!currentMenu -> at(idx).selected) {
       int dIDX; // delete index
       String dGUID; // delete index guid
@@ -153,16 +156,35 @@ void ProcessMenuCommand(int idx) {
       }
     }
   } else if (currentMenu -> at(idx).op == "GT") { // GOTO MENU
+
     if (lastMenu == NULL) {
       lastMenu = currentMenu;
     } else {
       lastMenu = NULL;
     }
+
     processExitMenu();
     currentMenu = currentMenu -> at(idx).gotoMenu; //[0];
     idx = 0;
     serverCountDown = 0; // we moved menus, so lets webserver work again some
-    currentItem = 0;
+
+    if (currentMenu != &MAINMENU)
+    {
+      Serial.println("NOT MainMenu");
+      lastItem = currentItem;
+      currentItem = 0;
+    }
+    else
+    {
+      Serial.println("IS MainMenu");
+      currentItem = lastItem;
+      lastItem = 0;
+    }
+
+    Serial.print("lastItem = ");  Serial.println(lastItem, DEC);
+    Serial.print("currentItem = ");  Serial.println(currentItem, DEC);
+
+
   } else if (currentMenu -> at(idx).op == "EB") {
     toggleBeep();
   } else if (currentMenu -> at(idx).op == "GV") {
@@ -182,10 +204,11 @@ void ProcessMenuCommand(int idx) {
   } else if (currentMenu -> at(idx).op == "FM") {
     getFLASHMEMINFO();
   } else if (currentMenu -> at(idx).op == "SU") {
-    uncheckALLPIDS();
+    uncheckALLPIDS(); // selected pids to scan for, unselect them!
+    uncheckALLVIEWPIDS(); // the pids we selected, clear the viewer....
     setupPIDS(); // rebuild table because we unchecked everything!
   } else if (currentMenu -> at(idx).op == "VU") {
-    uncheckALLVIEWPIDS();
+    uncheckALLVIEWPIDS(); // pids for viewer, unselect them!
     setupShowPIDS(); // rebuild menu since we unchecked views?
   } else if (currentMenu -> at(idx).op == "EN") {
 
@@ -216,7 +239,13 @@ void ProcessMenuCommand(int idx) {
   } else if (currentMenu -> at(idx).op == "RT") {
     doRamtest();
   } else if (currentMenu -> at(idx).op == "SV") {
+    lastItem = currentItem;
+    currentItem = 0;
     showStageViewer();
+  } else if (currentMenu -> at(idx).op == "RC") {
+    readDTCCodes();
+  } else if (currentMenu -> at(idx).op == "CC") {
+    clearDTCCodes();
   }
 }
 
@@ -347,7 +376,6 @@ void processKey(int key) {
       processExitMenu();
       currentMenu = lastMenu;
       currentItem = 0;
-
       lastMenu = NULL;
     }
   }
@@ -363,7 +391,6 @@ bool editYesNo(bool option) {
     lcd.print(" YES      >NO ");
   }
   while (1) {
-    delay(100);
     if (ir.available()) {
       irV = ir.readPacket();
       beepOnce();
@@ -381,6 +408,10 @@ bool editYesNo(bool option) {
         break;
       }
       irV = 0; // reset it
+    } else
+    {
+      delay(10);
+      //serverloop();
     }
   }
   return option;
@@ -407,29 +438,35 @@ void setupMenus() {
   lastMenu = NULL;
 
   MAINMENU.clear();
-  AddMenuItem( & MAINMENU, "Settings", "GT", false, 0, false, & SETTINGSMENU);
-  AddMenuItem( & MAINMENU, "Select PIDS", "GT", false, 0, false, & PIDMENU);
-  AddMenuItem( & MAINMENU, "Stage View", "SV", false, 0, false, NULL);
-  AddMenuItem( & MAINMENU, "Start Scan", "SS", false, 0, false, NULL);
-  AddMenuItem( & MAINMENU, "Get Vehicle Info", "GV", false, 0, false, NULL);
-  AddMenuItem( & MAINMENU, "Device Diag", "GT", false, 0, false, & DIAGMENU);
-  AddMenuItem( & MAINMENU, "About", "AB", false, 0, false, NULL);
+  AddMenuItem(&MAINMENU, "Settings", "GT", false, 0, false, &SETTINGSMENU);
+  AddMenuItem(&MAINMENU, "Select PIDS", "GT", false, 0, false, &PIDMENU);
+  AddMenuItem(&MAINMENU, "Stage View", "SV", false, 0, false, NULL);
+  AddMenuItem(&MAINMENU, "Start Scan", "SS", false, 0, false, NULL);
+  AddMenuItem(&MAINMENU, "Get Vehicle Info", "GV", false, 0, false, NULL);
+  AddMenuItem(&MAINMENU, "DTC Codes", "GT", false, 0, false, &DTCMENU);
+  AddMenuItem(&MAINMENU, "Device Diag", "GT", false, 0, false, &DIAGMENU);
+  AddMenuItem(&MAINMENU, "About", "AB", false, 0, false, NULL);
 
   SETTINGSMENU.clear();
-  AddMenuItem( & SETTINGSMENU, "Back to Main Menu", "GT", false, 0, false, & MAINMENU);
-  AddMenuItem( & SETTINGSMENU, "Startup Scan", "ST", false, 0, false, NULL);
-  AddMenuItem( & SETTINGSMENU, "Enable Beep", "EB", false, 0, false, NULL);
-  AddMenuItem( & SETTINGSMENU, "Network DHCP", "EN", false, 0, false, NULL);
-  AddMenuItem( & SETTINGSMENU, "Network IP", "NI", false, 0, false, NULL);
-  AddMenuItem( & SETTINGSMENU, "Network Status", "NS", false, 0, false, NULL);
+  AddMenuItem(&SETTINGSMENU, "Back to Main Menu", "GT", false, 0, false, &MAINMENU);
+  AddMenuItem(&SETTINGSMENU, "Startup Scan", "ST", false, 0, false, NULL);  
+  AddMenuItem(&SETTINGSMENU, "Enable Beep", "EB", false, 0, false, NULL);
+  AddMenuItem(&SETTINGSMENU, "Network DHCP", "EN", false, 0, false, NULL);
+  AddMenuItem(&SETTINGSMENU, "Network IP", "NI", false, 0, false, NULL);
+  AddMenuItem(&SETTINGSMENU, "Network Status", "NS", false, 0, false, NULL);
 
   DIAGMENU.clear();
-  AddMenuItem( & DIAGMENU, "Back to Main Menu", "GT", false, 0, false, & MAINMENU);
-  AddMenuItem( & DIAGMENU, "RAM Test", "RT", false, 0, false, NULL);
-  AddMenuItem( & DIAGMENU, "Get SD Card Info", "SD", false, 0, false, NULL);
-  AddMenuItem( & DIAGMENU, "Get Flash Info", "FM", false, 0, false, NULL);
-  AddMenuItem( & DIAGMENU, "Get Serial Info", "SI", false, 0, false, NULL);
-  AddMenuItem( & DIAGMENU, "Get Device Info", "DI", false, 0, false, NULL);
+  AddMenuItem(&DIAGMENU, "Back to Main Menu", "GT", false, 0, false, &MAINMENU);
+  AddMenuItem(&DIAGMENU, "RAM Test", "RT", false, 0, false, NULL);
+  AddMenuItem(&DIAGMENU, "Get SD Card Info", "SD", false, 0, false, NULL);
+  AddMenuItem(&DIAGMENU, "Get Flash Info", "FM", false, 0, false, NULL);
+  AddMenuItem(&DIAGMENU, "Get Serial Info", "SI", false, 0, false, NULL);
+  AddMenuItem(&DIAGMENU, "Get Device Info", "DI", false, 0, false, NULL);
+
+  DTCMENU.clear();
+  AddMenuItem(&DTCMENU, "Back to Main Menu", "GT", false, 0, false, &MAINMENU);
+  AddMenuItem(&DTCMENU, "Read DTC Codes", "RC", false, 0, false, NULL);
+  AddMenuItem(&DTCMENU, "Clear DTC Codes", "CC", false, 0, false, NULL);
 
   setupPIDS(); // do logic to build PIDS menu
   currentMenu = & MAINMENU;

@@ -263,3 +263,16 @@ unsigned char h2int(char c)
   }
   return (0);
 }
+
+void waitforOK(){
+  int irV;
+  while (1) {
+  if (ir.available()) {
+    irV = ir.readPacket();
+    beepOnce();
+    if (irV == hexOK) return; // exit out
+    irV = 0; // reset it  
+  } else
+   delay(10); 
+  }
+}

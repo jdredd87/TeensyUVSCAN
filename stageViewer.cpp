@@ -31,7 +31,7 @@ void setupShowPIDS() {
     } else {
       Serial.println("FALSE");
     }
-    
+
     AddMenuItem(&PIDVIEWMENU, pidName, "S!", false, idx, sPIDS.at(idx)._view, NULL);
   }
 
@@ -46,7 +46,7 @@ void showStageViewer() {
   lcd.print("to display while");
   lcd.setCursor(0, 2);
   lcd.print("scanning vehicle");
-  delay(500); // set back to 5000
+  delay(2000); // set back to 5000
 
   lcd.clear();
   lcd.setCursor(0, 0);

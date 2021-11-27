@@ -30,5 +30,6 @@ char *strremove(char * str, const char * sub);
 unsigned char h2int(char c);
 String urldecode(String str);
 String urlencode(String str);
+void waitforOK();
 
 #endif

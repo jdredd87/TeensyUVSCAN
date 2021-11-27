@@ -11,13 +11,13 @@
 //#define USE_QSPI_NAND // NAND Flash
 
 #if defined(USE_QSPI)
-LittleFS_QSPIFlash flashStorage;
+EXTMEM LittleFS_QSPIFlash flashStorage;
 char szDiskMem[] = "QSPI_DISK";
 #endif
 
 #if defined(USE_QSPI_NAND)
 char szDiskMem[] = "QSPI_NAND";
-LittleFS_QPINAND flashStorage;
+EXTMEM LittleFS_QPINAND flashStorage;
 #endif
 
 #if defined(USE_SDCARD)
@@ -237,7 +237,7 @@ void loadPIDSfile() {
     }
     }
   */
-//  serializeJsonPretty(doc, Serial);
+  //  serializeJsonPretty(doc, Serial);
   file1.close();
 }
 
@@ -279,7 +279,7 @@ void savePIDSfile() {
     }
   }
 
-//  serializeJsonPretty(doc, Serial);
+  //  serializeJsonPretty(doc, Serial);
 
   if (serializeJsonPretty(doc, file1) == 0) {
     Serial.println("");

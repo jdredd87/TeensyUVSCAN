@@ -30,7 +30,8 @@ struct TPID {
  byte _blockPOS; // 0,1,2,3,4,5
 
  bool _view; // show in viewer
- 
+
+ String _lastvalue;
 };
 
 extern QList<struct TPID> fPIDS;

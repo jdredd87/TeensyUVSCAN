@@ -10,8 +10,11 @@
 #include "pids.h"
 #include "webserver.h"
 #include <TimeLib.h>
+#include "TeensyThreads.h"
+
 
 void togglestartupScan();
 void startScanner();
+extern String CurrentLogFileName;
 
 #endif

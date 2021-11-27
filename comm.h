@@ -80,6 +80,7 @@ const char * const GET_OSID           = "3C0A";         // PCM OSID #
 const char * const SET_VIN1           = "3B0100";       // VIN Part 1 + VIN 1 HEX DATA
 const char * const SET_VIN2           = "3B02";         // VIN Part 2 + VIN 2 HEX DATA
 const char * const SET_VIN3           = "3B03";         // VIN Part 3 + VIN 3 HEX DATA
+const char * const GET_HW             = "3C04";         // Get PCM HW ID
 const char * const LASTBLOCK_FE       = "2A14FE000000"; // FE
 const char * const LASTBLOCK_FEFD     = "2A14FEFD0000"; // FE FD
 const char * const LASTBLOCK_FEFDFC   = "2A14FEFDFC00"; // FE FD FC
@@ -103,11 +104,12 @@ struct Tdeviceinfo {
 };
 
 void serial_flush(void);
+void initSTNScanner();
 String send(String cmd, int D);
 bool isOK(String value);
 bool isSTOPPED(String value);
 bool isGOOD(String value, String checkstr, int len);
-bool initSTN();
+bool initSTN(bool withHeader);
 String getVIN();
 String getOSID();
 String getVOLTS();

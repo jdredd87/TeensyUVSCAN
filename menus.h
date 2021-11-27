@@ -18,6 +18,7 @@
 #include "ramtest.h"
 #include "stageViewer.h"
 #include "QList.h"
+#include "dtc.h"
 
 extern const int hexUP;
 extern const int hexDOWN;

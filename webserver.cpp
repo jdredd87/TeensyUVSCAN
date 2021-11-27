@@ -4,6 +4,7 @@
 */
 
 #include "webserver.h"
+#include "scanner.h"
 
 #define FILE_NAME_LEN 64 // maximum length of file name including path
 
@@ -24,6 +25,8 @@
 #define FT_CSV 8
 #define FT_INVALID 9
 
+
+int webThreadID;
 
 bool stopserver = false; // hack to just trick the loop during RAM test. Seems to be no STOP to server once started?
 
@@ -56,6 +59,8 @@ const char * file_types[] = {
   "text/plain", // 7
   "text/csv"
 }; // 8
+
+// Threads::Mutex weblock;
 
 EXTMEM EthernetServer server(80);
 
@@ -189,15 +194,15 @@ bool ServiceClient(EthernetClient * client) {
 
       String URLFN = urldecode(file_name);
 
-      URLFN.toCharArray(file_name,URLFN.length()+1);
-      
+      URLFN.toCharArray(file_name, URLFN.length() + 1);
+
       Serial.print("req file name = ");
       Serial.println(file_name);
       Serial.print("req file req_line_1 = ");
       Serial.println(req_line_1);
 
 
-      
+
       if (http_req_type == HTTP_GET) { // HTTP GET request
         //  if (req_file_type < FT_INVALID) {      // valid file type
         if (1 == 1) { // valid file type
@@ -213,77 +218,44 @@ bool ServiceClient(EthernetClient * client) {
             RPM = random(7000);
             client -> println("HTTP/1.1 200 OK");
             client -> println("Content-Type: text/xml");
+            client -> println("Access-Control-Allow-Origin: null");
             client -> println("Connection: keep-alive");
-            client -> println("Access-Control-Allow-Origin: *");
             client -> println("");
             client -> println("<?xml version = \"1.0\" ?>");
             client -> println("<scanner>");
-            client -> println("<RPM>");
-            client -> println(RPM);
-            client -> println("</RPM>");
-            client -> println("<MPH>");
-            client -> println(MPH);
-            client -> println("</MPH>");
+
+            for (int idx = 0; idx < sPIDS.size(); idx++) {
+              client -> print("<");
+
+              String shortname;
+              shortname = sPIDS.at(idx)._shortname;
+
+              shortname.replace("(", "");
+              shortname.replace(")", "");
+              shortname.replace(" ", "");
+
+              client -> print(shortname);
+
+              client -> print(">");
+              client -> print(sPIDS.at(idx)._lastvalue);
+              client -> print("</");
+              client -> print(shortname);
+              client -> println(">");
+            }
+
             client -> println("</scanner>");
-          } else
+          }  else if (strstr(file_name, "/remove/")) { /// delete file request
 
-            if (strstr(file_name, "/remove/")) { /// delete file request
-              Serial.println("Remove found!");
-              char fn[256];
-              char logfn[256];
-              strncpy(fn, file_name, strlen(file_name) + 1);
-              strremove(fn, "/remove/");
-              if (fn != "") {
-                strncpy(logfn, "/logs/", 6);
-                strcat(logfn, fn);
-                Serial.println(logfn);
-                SD.remove(logfn);
-              }
-              client -> println(F("HTTP / 1.1 200 OK"));
-              client -> print(F("Content - Type: "));
-              client -> println(file_types[req_file_type]);
-              client -> println(F("Connection: close"));
-              client -> println();
-              client -> println("<head>");
-              client -> println("<meta http-equiv=\"Refresh\" content=\"0; URL=..\\\">");
-              client -> println("</head>");
-            } else
-
-              if (strcmp(file_name, "index.htm") == 0) {
-                Serial.println("loading....");
-
-                client -> println(F("HTTP / 1.1 200 OK"));
-                client -> print(F("Content - Type: "));
-                client -> println(file_types[req_file_type]);
-                client -> println(F("Connection: close"));
-                client -> println();
-
-                client -> println("<!DOCTYPE html>");
-                client -> println("<html lang=\"en\">");
-                client -> println("<head>");
-                client -> println("<title>UVScanner Web Server");
-                client -> println("</title>");
-                client -> println("<meta charset=\"utf-8\">");
-                client -> println("    <link rel=\"stylesheet\" href=\"styles.css\">");
-                client -> println("</head>");
-                client -> println("  <body>");
-
-                client -> println("<script>");
-                client -> println("function deleteFile(fn) { ");
-                client -> println(" if (confirm('Are you sure you want to delete log?')) { ");
-                client -> println(" window.location.href = '/remove/'+fn;");
-                client -> println("   } ");
-                client -> println("}");
-                client -> println("</script>");
-
-                client -> println("<h1 align=\"center\">UVScanner");
-                client -> println("</h1>");
-                client -> println("<h1 align=\"center\"><a href=\"live.htm\">Live Data View");
-                client -> println("</a>");
-                client -> println("</h1>");
-                client -> println("<h1 align=\"center\">Log Files");
-                client -> println("</h1>");
-                client -> println("<p align=\"center\">&nbsp;");
+            Serial.println("Remove found!");
+            char fn[256];
+            char logfn[256];
+            strncpy(fn, file_name, strlen(file_name) + 1);
+            strremove(fn, "/remove/");
+            if (fn != "") {
+              strncpy(logfn, "/logs/", 6);
+              strcat(logfn, fn);             
+              if (strcmp(logfn, "/logs/yes-all-files.csv") == 0) { // yes to delete all csv log files
+                Serial.println("Removing all Files!");
                 File root;
                 root = SD.open("/logs");
                 while (true) {
@@ -291,11 +263,107 @@ bool ServiceClient(EthernetClient * client) {
                   if (!entry) {
                     break;
                   }
-                  String FN;
-                  FN = entry.name();
-                  if (!FN.endsWith(".csv")) {
+                  char CFN[CurrentLogFileName.length() + 1];
+                  char longFN[64];
+                  CurrentLogFileName.toCharArray(CFN, CurrentLogFileName.length() + 1);
+                  sprintf(longFN, "%s%s", "/logs/", entry.name());
+                  if (strcmp(CFN, longFN) == 0)
+                  {
+                    Serial.println("Skipping");  // skip deleting file we are scanning on
                     continue;
-                  }
+                  }               
+                  SD.remove(longFN);
+                  entry.close();
+                }
+                root.close();
+
+              } else
+              {
+                SD.remove(logfn);
+              }
+            }
+            client -> println(F("HTTP / 1.1 200 OK"));
+            client -> println("Access-Control-Allow-Origin: null");
+            client -> print(F("Content - Type: "));
+            client -> println(file_types[req_file_type]);
+            client -> println(F("Connection: close"));
+            client -> println();
+            client -> println("<head>");
+            client -> println("<meta http-equiv=\"Refresh\" content=\"0; URL=..\\\">");
+            client -> println("</head>");
+          } else
+
+            if (strcmp(file_name, "index.htm") == 0) {
+              Serial.println("loading....");
+
+              client -> println(F("HTTP / 1.1 200 OK"));
+              client -> print(F("Content - Type: "));
+              client -> println("Access-Control-Allow-Origin: null");
+              client -> println(file_types[req_file_type]);
+              client -> println(F("Connection: close"));
+              client -> println();
+
+              client -> println("<!DOCTYPE html>");
+              client -> println("<html lang=\"en\">");
+              client -> println("<head>");
+              client -> println("<title>UVScanner Web Server");
+              client -> println("</title>");
+              client -> println("<meta charset=\"utf-8\">");
+              client -> println("    <link rel=\"stylesheet\" href=\"styles.css\">");
+              client -> println("</head>");
+              client -> println("  <body>");
+
+              client -> println("<script>");
+              client -> println("function deleteFile(fn) { ");
+              client -> println(" if (confirm('Are you sure you want to delete log?')) { ");
+              client -> println(" window.location.href = '/remove/'+fn;");
+              client -> println("   } ");
+              client -> println("}");
+              client -> println("</script>");
+
+              client -> println("<h1 align=\"center\">UVScanner");
+              client -> println("</h1>");
+              client -> println("<h1 align=\"center\"><a href=\"live.htm\">Live Data View");
+              client -> println("</a>");
+              client -> println("</h1>");
+              client -> println("<h1 align=\"center\">Log Files");
+              client -> println("</h1>");
+              client -> println("<p align=\"center\">&nbsp;");
+
+              client -> print("<button onclick=\"deleteFile('");
+              client -> print("yes-all-files.csv");
+              client -> print("')\"");
+              client -> println(" type=\"button\">Remove All Logs</button>");
+              client -> print("<br><br>");
+
+
+              File root;
+              root = SD.open("/logs");
+              while (true) {
+                File entry = root.openNextFile();
+                if (!entry) {
+                  break;
+                }
+                String FN;
+                FN = entry.name();
+                if (!FN.endsWith(".csv")) {
+                  continue;
+                }
+
+                String CFN;
+                CFN = CurrentLogFileName;
+                CFN.remove(0, 6);
+                Serial.println(FN);
+                Serial.println(CFN);
+
+                if (FN == CFN) {
+                  client -> print("Activly Scanning");
+                  client -> print("&nbsp;&nbsp;&nbsp;");
+                  client -> print(entry.name());
+                  client -> print("&nbsp;&nbsp;&nbsp;");
+                  client -> print("<br><br>");
+                } else
+                {
                   client -> print("<button onclick=\"window.location.href='./view.htm?logfile=/logs/");
                   client -> print(entry.name());
                   client -> print("' \"");
@@ -313,38 +381,41 @@ bool ServiceClient(EthernetClient * client) {
                   client -> print(entry.name());
                   client -> print("')\"");
                   client -> println(" type=\"button\">Remove</button>");
-                  client -> print("<br>");
-                  entry.close();
+                  client -> print("<br><br>");
                 }
-                root.close();
-                client -> println("</p>");
-                client -> println("</body>");
-                client -> println("</html>");
-              } else {
-                Serial.println("");
-                Serial.println("webFile");
-                Serial.println(file_name);
-                webFile = SD.open(file_name); // open requested file
-                if (webFile) {
-                  client -> println(F("HTTP/1.1 200 OK"));
-                  client -> print(F("Content-Type: "));
-                  client -> println(file_types[req_file_type]);
-                  client -> println(F("Connection: close"));
-                  client -> println();
-                  // send web page
-                  while (webFile.available()) {
-                    int num_bytes_read;
-                    char byte_buffer[64];
-                    // get bytes from requested file
-                    num_bytes_read = webFile.read(byte_buffer, 64);
-                    // send the file bytes to the client
-                    client -> write(byte_buffer, num_bytes_read);
-                  }
-                  webFile.close();
-                } else {
-                  Serial.println("INVALID REQUEST!");
-                }
+                entry.close();
               }
+              root.close();
+
+              client -> println("</p>");
+              client -> println("</body>");
+              client -> println("</html>");
+            } else {
+              Serial.println("");
+              Serial.println("webFile");
+              Serial.println(file_name);
+              webFile = SD.open(file_name); // open requested file
+              if (webFile) {
+                client -> println(F("HTTP/1.1 200 OK"));
+                client -> println("Access-Control-Allow-Origin: null");
+                client -> print(F("Content-Type: "));
+                client -> println(file_types[req_file_type]);
+                client -> println(F("Connection: close"));
+                client -> println();
+                // send web page
+                while (webFile.available()) {
+                  int num_bytes_read;
+                  char byte_buffer[64];
+                  // get bytes from requested file
+                  num_bytes_read = webFile.read(byte_buffer, 64);
+                  // send the file bytes to the client
+                  client -> write(byte_buffer, num_bytes_read);
+                }
+                webFile.close();
+              } else {
+                Serial.println("INVALID REQUEST!");
+              }
+            }
         } else {
           Serial.println("INVALID FILE TYPE");
         }
@@ -418,37 +489,15 @@ char GetRequestedHttpResource(char * req_line, char * file_name, char * file_typ
   return request_type;
 }
 
-
-int serverloopidx = 0;
-int serverloopstep = 0;
-
 void serverloop() {
-
-  if (stopserver == true) {
-    return; // stop accepting any client work
-  }
-
-  delay(1);
-  serverloopidx++;
-
-  if (serverloopidx >= (1024 * 512)) {
-    Serial.print(".");
-    serverloopidx = 0;
-    serverloopstep++;
-    if (serverloopstep >= 32) {
-      Serial.println("");
-      serverloopstep = 0;
-    }
-  }
-
   EthernetClient client = server.available();
   if (client) {
     while (client.connected()) {
+      Serial.println("incoming client...");
       if (ServiceClient(&client)) {
         break;
       }
     }
-    delay(1);
     client.stop();
   }
 }

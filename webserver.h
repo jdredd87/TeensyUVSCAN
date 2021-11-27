@@ -13,6 +13,7 @@
 #include "screen.h"
 #include "io.h"
 #include "pids.h"
+#include "TeensyThreads.h"
 
 void serverloop();
 bool serversetup();
@@ -21,8 +22,11 @@ bool ServiceClient(EthernetClient * client);
 char GetRequestedHttpResource(char * req_line, char * file_name, char * file_type);
 
 extern int serverCountDown;
+extern int webThreadID;
+
 extern EthernetServer server;
 extern bool stopserver;
 
+//extern Threads::Mutex weblock;
 
 #endif
