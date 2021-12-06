@@ -14,7 +14,7 @@
 #include "screen.h"
 #include "menus.h"
 
-void beepOnce();
+void beep();
 void beepLong();
 void toggleBeep();
 void reboot(String msg);

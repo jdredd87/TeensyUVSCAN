@@ -105,7 +105,6 @@ struct Tdeviceinfo {
 
 void serial_flush(void);
 void initSTNScanner();
-String send(String cmd, int D);
 bool isOK(String value);
 bool isSTOPPED(String value);
 bool isGOOD(String value, String checkstr, int len);
@@ -114,7 +113,12 @@ String getVIN();
 String getOSID();
 String getVOLTS();
 String getPCMHW();
-struct Tdeviceinfo getDeviceInfo();
+
+String send(String cmd, int D);
 String send2(String cmd, bool ignore);
+void send3(String cmd);
+void send4(String cmd, int D);
+
+struct Tdeviceinfo getDeviceInfo();
 
 #endif

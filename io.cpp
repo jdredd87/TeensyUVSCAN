@@ -8,7 +8,7 @@
 const byte tweeterPin = 2;
 const int note = 4699;
 
-void beepOnce()
+void beep()
 {
   if (!cfg.enableBeep) return;
   tone(tweeterPin, note, 125);
@@ -269,7 +269,7 @@ void waitforOK(){
   while (1) {
   if (ir.available()) {
     irV = ir.readPacket();
-    beepOnce();
+    beep();
     if (irV == hexOK) return; // exit out
     irV = 0; // reset it  
   } else

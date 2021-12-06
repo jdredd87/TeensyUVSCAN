@@ -6,7 +6,7 @@
 
 #include "screen.h"
 
-LiquidCrystal_I2C_Hangul lcd(0x3F, 20, 4); // LCD 20x4
+LiquidCrystal_I2C_Hangul lcd(0x27, 20, 4); // LCD 20x4
 
 // arrow up
 byte charArrowUP[8] = {
@@ -332,7 +332,7 @@ String setIP(String IP) {
   while (1) {
     if (ir.available()) {
       irV = ir.readPacket();
-      beepOnce();
+      beep();
 
       if (irV == hexLEFT) // delete
       {

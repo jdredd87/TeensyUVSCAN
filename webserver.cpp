@@ -27,10 +27,9 @@
 
 
 int webThreadID;
-
 bool stopserver = false; // hack to just trick the loop during RAM test. Seems to be no STOP to server once started?
-
 int serverCountDown = 0;
+
 byte mac[] = {
   0xDE,
   0xAD,
@@ -253,7 +252,7 @@ bool ServiceClient(EthernetClient * client) {
             strremove(fn, "/remove/");
             if (fn != "") {
               strncpy(logfn, "/logs/", 6);
-              strcat(logfn, fn);             
+              strcat(logfn, fn);
               if (strcmp(logfn, "/logs/yes-all-files.csv") == 0) { // yes to delete all csv log files
                 Serial.println("Removing all Files!");
                 File root;
@@ -267,12 +266,21 @@ bool ServiceClient(EthernetClient * client) {
                   char longFN[64];
                   CurrentLogFileName.toCharArray(CFN, CurrentLogFileName.length() + 1);
                   sprintf(longFN, "%s%s", "/logs/", entry.name());
+
                   if (strcmp(CFN, longFN) == 0)
                   {
                     Serial.println("Skipping");  // skip deleting file we are scanning on
+                    entry.close();
                     continue;
-                  }               
-                  SD.remove(longFN);
+                  }
+
+
+                  if (SD.remove(longFN))  {
+                    Serial.print("removing file >>"); Serial.println(longFN);
+                  } else
+                  {
+                    Serial.print("failed removing file >>"); Serial.println(longFN);
+                  }
                   entry.close();
                 }
                 root.close();
@@ -381,6 +389,24 @@ bool ServiceClient(EthernetClient * client) {
                   client -> print(entry.name());
                   client -> print("')\"");
                   client -> println(" type=\"button\">Remove</button>");
+                  client -> print("&nbsp;&nbsp;&nbsp;");
+
+
+                  int fsize = entry.size();
+
+                  if (fsize > 1024) {
+                    fsize = fsize / 1024;
+                    client -> print(fsize);
+                    client -> print("kb");
+
+                  } else
+                  {
+                    client -> print(entry.size());
+                    client -> print(" bytes");
+                  }
+
+
+
                   client -> print("<br><br>");
                 }
                 entry.close();
@@ -493,7 +519,7 @@ void serverloop() {
   EthernetClient client = server.available();
   if (client) {
     while (client.connected()) {
-      Serial.println("incoming client...");
+      //     Serial.println("incoming client...");
       if (ServiceClient(&client)) {
         break;
       }

@@ -65,6 +65,7 @@ void uncheckALLPIDS() {
   sPIDS.clear();
   for (int idx = 0; idx < fPIDS.size(); idx++) {
     fPIDS.at(idx)._selected = false;
+    fPIDS.at(idx)._view = false;
   }
   beepLong();
 }
@@ -277,6 +278,7 @@ void printMenu() {
     if (currentItem == 0) {
       lcd.print(" ");
     }
+
     if (currentItem == currentMenu -> size()) {
       lcd.print(" ");
     }
@@ -311,11 +313,14 @@ void printMenu() {
 
   if (showpidcount) {
     lcd.setCursor(0, 3);
+    Serial.print("sPIDS size = ");
+    Serial.println(sPIDS.size());
     lcd.print(sPIDS.size());
   }
 
   if (showviewcount) {
     lcd.setCursor(0, 3);
+    Serial.print("showviewcount");
     lcd.print(getVIEWcount());
   }
 
@@ -393,7 +398,7 @@ bool editYesNo(bool option) {
   while (1) {
     if (ir.available()) {
       irV = ir.readPacket();
-      beepOnce();
+      beep();
       if (irV == hexLEFT) {
         lcd.setCursor(0, 2);
         lcd.print(">YES       NO ");
@@ -449,7 +454,7 @@ void setupMenus() {
 
   SETTINGSMENU.clear();
   AddMenuItem(&SETTINGSMENU, "Back to Main Menu", "GT", false, 0, false, &MAINMENU);
-  AddMenuItem(&SETTINGSMENU, "Startup Scan", "ST", false, 0, false, NULL);  
+  AddMenuItem(&SETTINGSMENU, "Startup Scan", "ST", false, 0, false, NULL);
   AddMenuItem(&SETTINGSMENU, "Enable Beep", "EB", false, 0, false, NULL);
   AddMenuItem(&SETTINGSMENU, "Network DHCP", "EN", false, 0, false, NULL);
   AddMenuItem(&SETTINGSMENU, "Network IP", "NI", false, 0, false, NULL);

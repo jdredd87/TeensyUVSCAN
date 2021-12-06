@@ -16,8 +16,8 @@ char szDiskMem[] = "QSPI_DISK";
 #endif
 
 #if defined(USE_QSPI_NAND)
-char szDiskMem[] = "QSPI_NAND";
-EXTMEM LittleFS_QPINAND flashStorage;
+EXTMEM char szDiskMem[] = "QSPI_NAND";
+LittleFS_QPINAND flashStorage;
 #endif
 
 #if defined(USE_SDCARD)
@@ -27,7 +27,7 @@ char szDiskMem[] = "SD";
 bool flasheMEMEnabled = false;
 #define SD_FAT_TYPE 1
 
-const int pidfilesize = 65536; // allocate 64k of ram for PID file, should be plenty!
+const int pidfilesize = 1024 * 128; // allocate 128k of ram for PID file, should be plenty!
 
 void SDinit(bool showStartup) {
   Serial.println("SD Card Init");
@@ -74,7 +74,7 @@ void initFlashMem(bool showStartup) {
 
 /******* Configuration Section *******/
 
-EXTMEM scanConfig cfg;
+scanConfig cfg;
 
 const char * cfgfilename = "config.txt";
 
@@ -155,6 +155,7 @@ const char * pidsfilename = "pids.txt";
 
 void loadPIDSfile() {
   ClearBlocks();
+  sPIDS.clear();
   Serial.println("");
 
 #if!defined(USE_SDCARD)
@@ -176,7 +177,7 @@ void loadPIDSfile() {
     Serial.print(F("File opened "));
     Serial.println(pidsfilename);
   }
-
+  
   for (JsonObject pids_item : doc["pids"].as < JsonArray > ()) {
     const char * pids_item_guid = pids_item["guid"]; // "12e56326-f969-4661-ae59-258cb349ae48", ...
     bool pids_item_selected = pids_item["selected"]; // true, true, false, true
@@ -186,12 +187,13 @@ void loadPIDSfile() {
     bool pids_item_view = pids_item["view"];
 
     for (int idx = 0; idx < fPIDS.size(); idx++) {
-      //  Serial.println(fPIDS.at(idx)._guid);
       if (fPIDS.at(idx)._guid == pids_item_guid) {
         fPIDS.at(idx)._selected = pids_item_selected;
+        fPIDS.at(idx)._view = false;    
         if (pids_item_selected == true) {
           sPIDS.push_back(fPIDS.at(idx));
           int x = sPIDS.size() - 1;
+          //Serial.println(sPIDS.at(x)._shortname);
           sPIDS.at(x)._fake = pids_item_fake;
           sPIDS.at(x)._duplicate = pids_item_duplicate;
           sPIDS.at(x)._dupeIndex = pids_item_dupeIndex;
@@ -205,39 +207,7 @@ void loadPIDSfile() {
   printPIDS();
   BuildPIDS();
   PopulateGrid();
-
-  /*
-
-    // repair PIDS
-    for (int idx = 0; idx < fPIDS.size(); idx++) {
-    byte plen = 0;
-    String PID = "";
-    plen = fPIDS.at(idx)._PID.length();
-    switch (plen) {
-    case 3: {
-      PID = "0";
-      PID.concat(fPIDS.at(idx)._PID);
-      fPIDS.at(idx)._PID = PID;
-      break;
-    }
-    case 2: {
-      PID = "00";
-      PID.concat(fPIDS.at(idx)._PID);
-      fPIDS.at(idx)._PID = PID;
-      break;
-    }
-    case 1: {
-      PID = "000";
-      PID.concat(fPIDS.at(idx)._PID);
-      fPIDS.at(idx)._PID = PID;
-      break;
-    }
-    default:
-      break;
-    }
-    }
-  */
-  //  serializeJsonPretty(doc, Serial);
+  printSelected();
   file1.close();
 }
 
@@ -270,6 +240,7 @@ void savePIDSfile() {
   for (int idx = 0; idx < sPIDS.size(); idx++) {
     JsonObject piddata = pids.createNestedObject();
     if (sPIDS.at(idx)._guid != "") {
+      Serial.println(sPIDS.at(idx)._shortname);  
       piddata["guid"] = sPIDS.at(idx)._guid;
       piddata["selected"] = sPIDS.at(idx)._selected;
       piddata["fake"] = sPIDS.at(idx)._fake;

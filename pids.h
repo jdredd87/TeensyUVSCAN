@@ -47,5 +47,6 @@ void ClearBlocks();
 void InstallPIDS();
 void printPIDS();
 bool BuildPIDS();
+void printSelected();
 
 #endif

@@ -27,7 +27,7 @@ int getVIEWcount() {
       counter++;
     }
   }
- return counter;
+  return counter;
 }
 
 int AddPIDItem(TPID item) { // add by item object
@@ -343,6 +343,23 @@ bool BuildPIDS() {
   Serial.println("-----------------------------------------------");
 }
 
+
+void printSelected() {
+  Serial.println("");
+  Serial.println("Select for View");
+  Serial.println("-----------------------------------------------");
+  Serial.println("");
+  for (int x = 0; x < sPIDS.size(); x++) {
+    if (sPIDS.at(x)._view) {
+      Serial.print(sPIDS.at(x)._PID);
+      Serial.print(" - ");
+      Serial.println(sPIDS.at(x)._name);
+    }
+  }
+  Serial.println("");
+  Serial.println("");
+
+}
 // Generates the list of selected PIDS and their position / states
 void printPIDS() {
   Serial.println("");

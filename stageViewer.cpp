@@ -3,6 +3,9 @@
 EXTMEM QList < struct MenuCommandRec > PIDVIEWMENU;
 
 void uncheckALLVIEWPIDS() {
+  for (int idx = 0; idx < fPIDS.size(); idx++) {
+    fPIDS.at(idx)._view = false;
+  }
   for (int idx = 0; idx < sPIDS.size(); idx++) {
     sPIDS.at(idx)._view = false;
   }
@@ -13,6 +16,7 @@ void setupShowPIDS() {
   String pidName = "";
 
   PIDVIEWMENU.clear();
+
   AddMenuItem(&PIDVIEWMENU, "Back to Main Menu", "GT", false, 0, false, & MAINMENU);
   AddMenuItem(&PIDVIEWMENU, "Uncheck All", "VU", false, 0, false, NULL);
   AddMenuItem(&PIDVIEWMENU, "", "SP", true, 0, false, NULL);
@@ -51,6 +55,7 @@ void showStageViewer() {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Select 4. * to exit.");
+
   setupShowPIDS();
 
   // emulate the "GT" menu call

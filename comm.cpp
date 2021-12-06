@@ -11,7 +11,53 @@ void serial_flush(void) { // flush input buffer if any chars left over
   }
 }
 
-String send2(String cmd, bool ignore) {
+
+void send4(String cmd, int D) // sends data and grabs response, but just eats it.
+{
+  String inData = "";
+  serial_flush();
+  inData = "";
+  Serial.print("SEND>> ");
+  Serial.println(cmd);
+  Serial.println(""); // terminal
+  Serial1.print(cmd);
+  Serial1.print("\r"); // device
+  delay(10);
+  unsigned long timeoutTime = millis() + D; // time clock as of right now + our D for delay timeout value
+  unsigned long checkTime = 0;
+  while (1) //(Serial1.available())
+  {
+    // very simple check for a timeout
+    checkTime = millis();
+    if (checkTime > timeoutTime) {    
+      inData = "";
+      break;
+    }
+    delay(1); // i like to wait 1ms for time to happen cause this stuff is slow and not like its super time sensative
+    if (Serial1.available()) {
+      delay(1);
+      char recChar = Serial1.read();
+      if (recChar == '>') {
+        break;
+      } else {
+        if (recChar == char(10)) continue;
+        if (recChar == char(13)) continue;
+        inData.concat(recChar);
+      }
+    }
+  }
+}
+
+void send3(String cmd) // Send data but that is it
+{
+  Serial.print("SEND3>> ");
+  Serial.println(cmd);
+  Serial.println(""); // terminal
+  Serial1.print(cmd);
+  Serial1.print("\r"); // device
+}
+
+String send2(String cmd, bool ignore) { // send data, grab data, no defined timeout by user, 100ms time out hard coded in or break instantly out
   Serial.print("SEND2>> ");
   Serial.println(cmd);
   Serial.println(""); // terminal
@@ -47,7 +93,8 @@ String send2(String cmd, bool ignore) {
   Serial.println("done");
   return r;
 }
-String send(String cmd, int D) // send a command to elm327
+
+String send(String cmd, int D) // Send data and get data
 {
   String inData = "";
   serial_flush();
@@ -137,8 +184,9 @@ void initSTNScanner() {
   send("20", 1000); // reset pcm calls maybe?
   send("1000", 1000); // reset some pcm data asking for pids?
   send("0100", 1000); // reset some pcm data asking for pids?
-  printStage("STPTO");  send("STPTO 1000", 1000); // TIMEOUTS
-  printStage("STPTOT"); send("STPTOT 1000", 1000);
+  
+  // printStage("STPTO");  send("STPTO 1000", 1000); // TIMEOUTS
+  // printStage("STPTOT"); send("STPTOT 1000", 1000);
 }
 
 //need some verify routines after grabbing data

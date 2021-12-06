@@ -5,7 +5,6 @@
 
 #include "dtc.h"
 
-
 String convertDTCCode(String code) {
   char c;
   String newCode = "";
